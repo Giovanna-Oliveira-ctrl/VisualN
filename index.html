@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sete Velas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Sete Velas: uma visual novel de romance e terror num casarão da serra mineira.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;1,400&family=Alegreya+Sans+SC:wght@400;500&family=IM+Fell+English:ital@0;1&display=swap">
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+<main id="palco" aria-label="Sete Velas">
+  <canvas id="fundo" aria-hidden="true"></canvas>
+  <canvas id="transicao" aria-hidden="true"></canvas>
+  <div id="personagens" class="camada" aria-hidden="true"></div>
+  <canvas id="efeitos" aria-hidden="true"></canvas>
+  <div id="vinheta" class="camada" aria-hidden="true"></div>
+  <div id="grao" class="camada" aria-hidden="true"></div>
+
+  <section id="caixa" hidden aria-label="Diálogo">
+    <div class="caixa-dentro">
+      <p id="nome"></p>
+      <p id="fala" aria-hidden="true"></p>
+      <span id="seta" aria-hidden="true"></span>
+    </div>
+  </section>
+  <p id="leitor" class="so-leitor" aria-live="polite"></p>
+
+  <div id="escolhas" hidden role="group" aria-label="Escolhas"></div>
+
+  <nav id="menu-rapido" hidden aria-label="Menu do jogo">
+    <button type="button" class="largo" data-acao="historico">Histórico</button>
+    <button type="button" data-acao="auto" aria-pressed="false">Auto</button>
+    <button type="button" data-acao="pular" aria-pressed="false">Pular</button>
+    <button type="button" class="largo" data-acao="salvar">Salvar</button>
+    <button type="button" class="largo" data-acao="carregar">Carregar</button>
+    <button type="button" class="largo" data-acao="opcoes">Opções</button>
+    <button type="button" data-acao="menu">Menu</button>
+  </nav>
+
+  <section id="velas-jogo" class="tela" hidden aria-labelledby="velas-titulo">
+    <div class="velas-topo">
+      <p class="velas-relogio" id="velas-relogio">23:58:00</p>
+      <h2 id="velas-titulo">Acenda as sete velas</h2>
+      <p class="velas-dica" id="velas-dica">Da esquerda para a direita, antes da meia-noite.</p>
+    </div>
+    <div>
+      <div class="velas-fila" id="velas-fila"></div>
+      <p class="velas-contagem" id="velas-contagem" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section id="cartao" class="tela" hidden aria-live="polite">
+    <div>
+      <h2 class="cartao-titulo"></h2>
+      <p class="cartao-sub"></p>
+    </div>
+  </section>
+
+  <section id="tela-final" class="tela" hidden aria-labelledby="final-titulo">
+    <p class="final-numero" id="final-numero"></p>
+    <h2 class="final-titulo" id="final-titulo"></h2>
+    <p class="final-texto" id="final-texto"></p>
+    <p class="final-cont" id="final-cont"></p>
+    <div class="config-acoes">
+      <button type="button" class="botao primario" id="bt-final-voltar">Voltar à última escolha</button>
+      <button type="button" class="botao" id="bt-final-titulo">Tela inicial</button>
+    </div>
+  </section>
+
+  <section id="tela-titulo" class="tela" hidden aria-labelledby="titulo-jogo">
+    <div>
+      <p class="titulo-sobre">Uma história de amor e assombração</p>
+      <h1 class="titulo" id="titulo-jogo">Sete Velas</h1>
+      <div class="titulo-velas" aria-hidden="true">
+        <span class="minivela"></span><span class="minivela"></span><span class="minivela"></span><span class="minivela"></span><span class="minivela"></span><span class="minivela"></span><span class="minivela"></span>
+      </div>
+      <nav class="titulo-menu" aria-label="Menu principal">
+        <button type="button" id="bt-novo">Novo jogo</button>
+        <button type="button" id="bt-continuar">Continuar <small id="continuar-info"></small></button>
+        <button type="button" id="bt-carregar">Carregar</button>
+        <button type="button" id="bt-finais">Finais <small id="cont-finais"></small></button>
+        <button type="button" id="bt-opcoes">Opções</button>
+      </nav>
+      <p class="titulo-rodape">Melhor com fones de ouvido e luz apagada. Clique, toque ou aperte espaço para avançar o texto.</p>
+    </div>
+  </section>
+
+  <section id="tela-config" class="tela" hidden>
+    <form class="config-passo" id="passo-nome" autocomplete="off">
+      <h2><label for="campo-nome">Como você se chama?</label></h2>
+      <p>É assim que as pessoas de São Bento do Sereno vão te chamar.</p>
+      <input class="campo-nome" id="campo-nome" name="nome" maxlength="18" value="Ariel" spellcheck="false">
+      <div class="config-acoes">
+        <button type="submit" class="botao primario">Continuar</button>
+        <button type="button" class="botao" data-voltar>Voltar</button>
+      </div>
+    </form>
+    <div class="config-passo" id="passo-par" hidden>
+      <h2>Quem toca piano no casarão?</h2>
+      <p>A história é a mesma. Muda quem você vai encontrar na sala, à noite, tocando uma valsa que nunca termina.</p>
+      <div class="pares" role="group" aria-label="Escolha o par romântico">
+        <button type="button" class="par" data-li="helena" aria-pressed="false">
+          <canvas width="400" height="500" aria-hidden="true"></canvas>
+          <span class="par-texto">
+            <span class="par-nome">Helena</span>
+            <span class="par-desc">Pianista. Fala baixo, ri pouco e sabe de cor cada rangido da casa.</span>
+          </span>
+        </button>
+        <button type="button" class="par" data-li="heitor" aria-pressed="false">
+          <canvas width="400" height="500" aria-hidden="true"></canvas>
+          <span class="par-texto">
+            <span class="par-nome">Heitor</span>
+            <span class="par-desc">Pianista. Gentil, meio desajeitado, sempre com frio nas mãos.</span>
+          </span>
+        </button>
+      </div>
+      <p class="aviso-conteudo">Contém sustos, sons altos repentinos e luzes piscando. Você pode desligar os flashes e o tremor da tela em Opções.</p>
+      <div class="config-acoes">
+        <button type="button" class="botao primario" id="bt-comecar" disabled>Começar</button>
+        <button type="button" class="botao" data-voltar-nome>Voltar</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="painel" class="tela" hidden>
+    <div class="painel-caixa" role="dialog" aria-modal="true" aria-labelledby="painel-titulo">
+      <div class="painel-topo">
+        <h2 id="painel-titulo">Menu</h2>
+        <button type="button" class="fechar" id="bt-fechar-painel">Fechar</button>
+      </div>
+      <div class="painel-abas" role="tablist">
+        <button type="button" role="tab" data-aba="salvar">Salvar</button>
+        <button type="button" role="tab" data-aba="carregar">Carregar</button>
+        <button type="button" role="tab" data-aba="historico">Histórico</button>
+        <button type="button" role="tab" data-aba="opcoes">Opções</button>
+        <button type="button" role="tab" data-aba="finais">Finais</button>
+        <button type="button" role="tab" data-aba="menu">Sair</button>
+      </div>
+      <div class="painel-corpo" id="painel-corpo" role="tabpanel"></div>
+    </div>
+  </section>
+
+  <div id="cortina" class="camada" aria-hidden="true"></div>
+  <div id="flash" class="camada" aria-hidden="true"></div>
+</main>
+
+<script src="arte/arte.js"></script>
+<script src="js/pintor.js"></script>
+<script src="js/som.js"></script>
+<script src="js/historia.js"></script>
+<script src="js/motor.js"></script>
+</body>
+</html>
