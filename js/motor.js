@@ -818,6 +818,7 @@
     pararAuto();
     modoAtual = 'velas';
     caixa.hidden = true;
+    $('#menu-rapido').hidden = true;
     const tela = $('#velas-jogo');
     const fila = $('#velas-fila');
     const dica = $('#velas-dica');
@@ -933,6 +934,7 @@
     estado.vars['velas' + velas.noite] = velas.acesas;
     velas = null;
     $('#velas-jogo').hidden = true;
+    $('#menu-rapido').hidden = false;
     modoAtual = null;
     executarAte();
   }

@@ -426,7 +426,7 @@ button { cursor: pointer; }
   border-radius: 2px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-.par canvas { width: 100%; aspect-ratio: 4 / 5; max-width: 100%; display: block; background: radial-gradient(ellipse at 50% 30%, #1d2230, #0a0b0f 70%); }
+.par canvas { width: 100%; height: min(38vh, 24rem); max-width: 100%; display: block; object-fit: cover; object-position: 50% 15%; background: radial-gradient(ellipse at 50% 30%, #1d2230, #0a0b0f 70%); }
 .par-texto { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.85rem 1rem 1rem; }
 .par-nome { font-family: var(--fonte-titulo); font-size: 1.6rem; color: var(--cera); }
 .par-desc { font-size: 0.98rem; color: var(--papel-fraco); line-height: 1.45; }

@@ -94,7 +94,8 @@
     g.restore();
   }
   function haze(g, y0, y1, rgb, a0, a1) {
-    vg(g, 0, y0, W, y1, [[0, `rgba(${rgb},${a0})`], [1, `rgba(${rgb},${a1})`]]);
+    const d = y1 - y0, top = y0 - d * 0.35, bot = y1 + d * 0.8, T = bot - top;
+    vg(g, 0, top, W, bot, [[0, `rgba(${rgb},0)`], [(y0 - top) / T, `rgba(${rgb},${a0})`], [(y1 - top) / T, `rgba(${rgb},${a1})`], [1, `rgba(${rgb},0)`]]);
   }
   function band(g, yc, h, rgb, a) {
     vg(g, 0, yc - h / 2, W, yc + h / 2, [[0, `rgba(${rgb},0)`], [0.5, `rgba(${rgb},${a})`], [1, `rgba(${rgb},0)`]]);
@@ -105,7 +106,6 @@
     for (let i = 2; i < pts.length; i += 2) g.lineTo(pts[i], pts[i + 1]);
     g.closePath();
   }
-  function fillPoly(g, pts, fill) { poly(g, pts); g.fillStyle = fill; g.fill(); }
   function ell(g, x, y, rx, ry, rot) { g.beginPath(); g.ellipse(x, y, Math.max(0.1, rx), Math.max(0.1, ry), rot || 0, 0, TAU); }
   function arch(g, x, y, w, h) {
     g.beginPath();
@@ -240,8 +240,7 @@
     const f = 0.8 + 0.2 * fl(t * 9 + seed * 7.1);
     const sway = (fl(t * 4.3 + seed * 3.3) - 0.5) * h * 0.35 + (lean || 0) * h;
     const hh = h * f;
-    glow(ctx, x, y - hh * 0.45, h * 6.5 * (0.88 + 0.12 * f) * p, '255,150,70', 0.2 * p);
-    glow(ctx, x, y - hh * 0.4, h * 2.2, '255,200,120', 0.35 * p);
+    glow(ctx, x, y - hh * 0.45, h * 4.2 * (0.88 + 0.12 * f) * p, '255,160,80', 0.26 * p);
     const gr = ctx.createRadialGradient(x + sway * 0.3, y - hh * 0.32, 0, x + sway * 0.3, y - hh * 0.32, hh * 0.85);
     gr.addColorStop(0, 'rgba(255,252,232,1)');
     gr.addColorStop(0.3, 'rgba(255,214,130,0.98)');
@@ -336,13 +335,13 @@
       g.restore();
     }
   }
-  // araucária: tronco reto e copa em candelabro, com tufos nas pontas
+  // araucária: tronco reto e copa em candelabro, com tufos densos nos braços
   function araucaria(g, rnd, x, yb, h, color, detail) {
     g.save();
     g.fillStyle = color;
     g.strokeStyle = color;
     g.lineCap = 'round';
-    const top = yb - h, tw = Math.max(1, h * 0.013);
+    const top = yb - h, tw = Math.max(1, h * 0.014);
     g.beginPath();
     g.moveTo(x - tw, yb);
     g.lineTo(x - tw * 0.45, top + h * 0.06);
@@ -351,70 +350,103 @@
     g.closePath();
     g.fill();
     if (detail) {
-      g.lineWidth = Math.max(1, h * 0.004);
-      for (let i = 0; i < 5; i++) {
-        const by = top + h * (0.35 + rnd() * 0.4), s = rnd() < 0.5 ? -1 : 1;
-        line(g, x, by, x + s * h * (0.03 + rnd() * 0.04), by - h * 0.02);
+      g.lineWidth = Math.max(1, h * 0.005);
+      for (let i = 0; i < 6; i++) {
+        const by = top + h * (0.32 + rnd() * 0.42), s = rnd() < 0.5 ? -1 : 1;
+        line(g, x, by, x + s * h * (0.03 + rnd() * 0.05), by - h * 0.025);
       }
     }
-    const crown = h * (0.3 + rnd() * 0.1);
-    const nb = detail ? 13 : 7;
-    const tuftN = detail ? 16 : 6;
+    const cw = h * (0.3 + rnd() * 0.1);
+    const nb = detail ? 11 : 7;
+    const tuftN = detail ? 12 : 5;
+    const tuft = (px, py, s) => {
+      const rx = h * 0.034 * s * (0.6 + rnd() * 0.6);
+      ell(g, px + (rnd() - 0.5) * h * 0.03, py - rnd() * h * 0.012, rx, rx * (0.32 + rnd() * 0.18), (rnd() - 0.5) * 0.5);
+      g.fill();
+    };
     for (let i = 0; i < nb; i++) {
-      const u = (i + 0.5) / nb * 2 - 1;
-      const ex = x + u * crown * (0.85 + rnd() * 0.3);
-      const by = top + h * (0.07 + 0.2 * Math.abs(u) + rnd() * 0.04);
-      const ty = top + h * (0.015 + 0.035 * rnd() + 0.03 * Math.abs(u));
-      g.lineWidth = Math.max(0.8, h * 0.006);
+      const u = ((i + 0.5) / nb) * 2 - 1;
+      const ex = x + u * cw * (0.85 + rnd() * 0.3);
+      const by = top + h * (0.08 + 0.17 * Math.abs(u) + rnd() * 0.03);
+      const ty = top + h * (0.02 + 0.03 * rnd() + 0.025 * Math.abs(u));
+      const cx = lerp(x, ex, 0.8), cy = by + h * 0.005;
+      g.lineWidth = Math.max(0.8, h * 0.008);
       g.beginPath();
       g.moveTo(x, by);
-      g.quadraticCurveTo(lerp(x, ex, 0.75), by + h * 0.01, ex, ty + h * 0.02);
+      g.quadraticCurveTo(cx, cy, ex, ty);
       g.stroke();
       for (let k = 0; k < tuftN; k++) {
-        const rx = h * 0.028 * (0.5 + rnd() * 0.7);
-        ell(g, ex + (rnd() - 0.5) * h * 0.075, ty + (rnd() - 0.35) * h * 0.035, rx, rx * (0.35 + rnd() * 0.2), (rnd() - 0.5) * 0.5);
+        const t = 0.45 + 0.55 * Math.pow(rnd(), 0.6);
+        const px = (1 - t) * (1 - t) * x + 2 * (1 - t) * t * cx + t * t * ex;
+        const py = (1 - t) * (1 - t) * by + 2 * (1 - t) * t * cy + t * t * ty;
+        tuft(px, py, 0.5 + t * 0.7);
+      }
+    }
+    for (let k = 0; k < tuftN; k++) tuft(x + (rnd() - 0.5) * h * 0.08, top + h * 0.035, 1);
+    g.restore();
+  }
+  // copa de árvore: massa escura com cachos de folhas miúdas nas bordas
+  function leafy(g, rnd, x, y, rx, ry, color, n, hi) {
+    g.save();
+    g.fillStyle = color;
+    for (let i = 0; i < 26; i++) {
+      const a = rnd() * TAU, d = Math.sqrt(rnd()) * 0.55;
+      const br = Math.min(rx, ry) * (0.16 + rnd() * 0.16);
+      ell(g, x + Math.cos(a) * rx * d, y + Math.sin(a) * ry * d, br, br * (0.7 + rnd() * 0.3), rnd() * TAU);
+      g.fill();
+    }
+    const clusters = Math.round((n || 120) / 1.6);
+    for (let c = 0; c < clusters; c++) {
+      const a = rnd() * TAU, d = Math.pow(rnd(), 0.45);
+      const cx = x + Math.cos(a) * rx * d, cy = y + Math.sin(a) * ry * d;
+      const cr = 12 + rnd() * 24;
+      for (let i = 0; i < 20; i++) {
+        const aa = rnd() * TAU, dd = Math.sqrt(rnd()) * cr;
+        const lx = cx + Math.cos(aa) * dd, ly = cy + Math.sin(aa) * dd;
+        g.fillStyle = hi && (lx - x) / rx - (ly - y) / ry > 0.5 && rnd() < 0.5 ? hi : color;
+        ell(g, lx, ly, 2.5 + rnd() * 5, 1.4 + rnd() * 2.6, rnd() * TAU);
         g.fill();
       }
     }
-    for (let k = 0; k < tuftN; k++) {
-      const rx = h * 0.03 * (0.5 + rnd() * 0.6);
-      ell(g, x + (rnd() - 0.5) * h * 0.08, top + h * 0.03 + (rnd() - 0.5) * h * 0.03, rx, rx * 0.45, (rnd() - 0.5) * 0.4);
-      g.fill();
-    }
     g.restore();
   }
-  function leafy(g, rnd, x, y, rx, ry, color, n) {
-    g.save();
-    g.fillStyle = color;
-    for (let i = 0; i < (n || 140); i++) {
-      const a = rnd() * TAU, d = Math.sqrt(rnd());
-      const r = 8 + rnd() * 26;
-      ell(g, x + Math.cos(a) * rx * d, y + Math.sin(a) * ry * d, r, r * (0.7 + rnd() * 0.3));
-      g.fill();
-    }
-    g.restore();
-  }
-  // hortênsias: arbusto de folhas escuras com cabeças de flores azuis
+  // hortênsias: arbusto denso de folhas pontudas com cabeças de flores
   function hydrangea(g, rnd, x, y, R, cols, lit) {
     g.save();
-    for (let i = 0; i < 46; i++) {
-      const a = rnd() * TAU, d = Math.sqrt(rnd()) * R;
-      g.fillStyle = rnd() < 0.5 ? '#14201a' : '#1b2a21';
-      ell(g, x + Math.cos(a) * d, y + Math.sin(a) * d * 0.6 + R * 0.25, 14 + rnd() * 14, 7 + rnd() * 7, rnd() * TAU);
+    g.fillStyle = '#0c140f';
+    ell(g, x, y + R * 0.28, R * 1.05, R * 0.6);
+    g.fill();
+    for (let i = 0; i < 110; i++) {
+      const a = rnd() * TAU, d = Math.sqrt(rnd()) * R * 1.05;
+      const lx = x + Math.cos(a) * d, ly = y + R * 0.25 + Math.sin(a) * d * 0.6;
+      const s = 9 + rnd() * 12;
+      g.save();
+      g.translate(lx, ly);
+      g.rotate(rnd() * TAU);
+      g.fillStyle = rnd() < 0.5 ? '#15231a' : '#1e3125';
+      g.beginPath();
+      g.moveTo(-s, 0);
+      g.quadraticCurveTo(0, -s * 0.55, s, 0);
+      g.quadraticCurveTo(0, s * 0.55, -s, 0);
       g.fill();
+      g.strokeStyle = 'rgba(70,100,70,0.3)';
+      g.lineWidth = 1;
+      line(g, -s * 0.8, 0, s * 0.8, 0);
+      g.restore();
     }
     const heads = 5 + ((rnd() * 4) | 0);
     for (let hI = 0; hI < heads; hI++) {
       const hx = x + (rnd() - 0.5) * R * 1.5, hy = y + (rnd() - 0.6) * R * 0.7, hr = R * (0.24 + rnd() * 0.14);
-      for (let j = 0; j < 46; j++) {
+      soft(g, hx, hy + hr * 0.4, hr * 1.1, 'rgba(5,8,6,0.6)', 0.6);
+      for (let j = 0; j < 64; j++) {
         const a = rnd() * TAU, d = Math.sqrt(rnd()) * hr;
         const fx = hx + Math.cos(a) * d, fy = hy + Math.sin(a) * d * 0.85;
-        const up = clamp(((hy - fy) / hr + (hx - fx) / hr * (lit || 0.3)) * 0.5 + 0.5, 0, 1);
+        const up = clamp(((hy - fy) / hr + ((hx - fx) / hr) * (lit || 0.3)) * 0.5 + 0.5, 0, 1);
         const c = cols[(rnd() * cols.length) | 0];
-        g.fillStyle = `rgba(${c},${0.55 + up * 0.45})`;
+        g.fillStyle = `rgba(${c},${0.45 + up * 0.55})`;
         const pr = 2.2 + rnd() * 2.6;
-        for (let p = 0; p < 4; p++) {
-          ell(g, fx + Math.cos(p * Math.PI / 2 + a) * pr * 0.7, fy + Math.sin(p * Math.PI / 2 + a) * pr * 0.7, pr * 0.75, pr * 0.55, p * Math.PI / 2 + a);
+        for (let q = 0; q < 4; q++) {
+          ell(g, fx + Math.cos(q * Math.PI / 2 + a) * pr * 0.7, fy + Math.sin(q * Math.PI / 2 + a) * pr * 0.7, pr * 0.75, pr * 0.55, q * Math.PI / 2 + a);
           g.fill();
         }
         if (up > 0.7) { g.fillStyle = 'rgba(230,240,255,0.25)'; ell(g, fx, fy, 1, 1); g.fill(); }
@@ -442,16 +474,26 @@
     g.clip();
     g.fillStyle = mortar;
     g.fillRect(x0, y0, x1 - x0, y1 - y0);
-    for (let y = y0; y < y1;) {
-      const bh = 26 + rnd() * 22;
+    const j = () => (rnd() - 0.5) * 8;
+    for (let y = y0 - rnd() * 20; y < y1;) {
+      const bh = 30 + rnd() * 26;
       for (let x = x0 - rnd() * 60; x < x1;) {
-        const bw = 40 + rnd() * 70;
-        const v = (rnd() - 0.5) * var_;
+        const bw = 44 + rnd() * 80, v = (rnd() - 0.5) * var_;
         g.fillStyle = `rgb(${base[0] + v},${base[1] + v},${base[2] + v * 1.1})`;
-        rrect(g, x + 2, y + 2, bw - 4, bh - 4, 5);
+        g.beginPath();
+        g.moveTo(x + 3 + j(), y + 3 + j());
+        g.lineTo(x + bw * 0.5 + j(), y + 2 + j());
+        g.lineTo(x + bw - 3 + j(), y + 4 + j());
+        g.lineTo(x + bw - 2 + j(), y + bh * 0.5 + j());
+        g.lineTo(x + bw - 4 + j(), y + bh - 3 + j());
+        g.lineTo(x + bw * 0.5 + j(), y + bh - 2 + j());
+        g.lineTo(x + 3 + j(), y + bh - 4 + j());
+        g.lineTo(x + 2 + j(), y + bh * 0.5 + j());
+        g.closePath();
         g.fill();
-        g.fillStyle = 'rgba(255,255,255,0.04)';
-        g.fillRect(x + 4, y + 3, bw - 8, 3);
+        soft(g, x + rnd() * bw, y + rnd() * bh, 8 + rnd() * 14, 'rgba(0,0,0,0.3)');
+        g.fillStyle = 'rgba(255,255,255,0.035)';
+        g.fillRect(x + 8, y + 5, bw - 16, 3);
         x += bw;
       }
       y += bh;
@@ -534,11 +576,9 @@
       g.fillStyle = lin(g, 0, 484, 0, 900, [[0, '#5e6271'], [0.25, '#3c4049'], [1, '#1b1f26']]);
       g.fill();
       g.clip();
-      for (let i = 0; i < 90; i++) {
-        const y = 490 + Math.pow(rnd(), 1.3) * 410, x = 600 + rnd() * 700, l = 8 + (y - 480) * 0.15;
-        g.strokeStyle = `rgba(${rnd() < 0.3 ? '255,170,130' : '150,155,175'},${0.05 + rnd() * 0.08})`;
-        g.lineWidth = 1 + (y - 480) * 0.012;
-        line(g, x, y, x + (rnd() - 0.5) * 3, y + l);
+      for (let i = 0; i < 40; i++) {
+        const y = 490 + Math.pow(rnd(), 1.3) * 410, x = 600 + rnd() * 700, l = 6 + (y - 480) * 0.08;
+        soft(g, x, y + l / 2, l, `rgba(${rnd() < 0.3 ? '255,170,130' : '150,155,175'},${0.06 + rnd() * 0.06})`, 0.25, Math.PI / 2);
       }
       light(g, 942, 520, 160, '255,170,130', 0.2);
       g.restore();
@@ -715,10 +755,12 @@
     g.fillStyle = '#6d665c';
     g.fillRect(730, 640, 140, 9);
     g.fillRect(716, 649, 168, 9);
-    // sombreamento lateral e manchas
+    // sombreamento lateral e manchas (só sobre a igreja)
     g.save();
-    g.globalCompositeOperation = 'multiply';
-    g.fillStyle = lin(g, 600, 0, 1000, 0, [[0, 'rgba(120,130,150,0.2)'], [0.5, 'rgba(255,255,255,0)'], [1, 'rgba(60,70,95,0.55)']]);
+    g.globalCompositeOperation = 'source-atop';
+    g.fillStyle = lin(g, 600, 0, 1000, 0, [[0, 'rgba(30,36,50,0.15)'], [0.5, 'rgba(30,36,50,0)'], [1, 'rgba(25,30,48,0.5)']]);
+    g.fillRect(590, 100, 420, 560);
+    g.fillStyle = lin(g, 0, 300, 0, 660, [[0, 'rgba(25,30,45,0)'], [1, 'rgba(25,30,45,0.35)']]);
     g.fillRect(590, 100, 420, 560);
     g.restore();
     for (let i = 0; i < 26; i++) {
@@ -848,14 +890,17 @@
   }
   SCENES.vila = {
     brush: { n: 14000, len: [6, 18], width: [2, 4], alpha: 0.2, ang: Math.PI / 2, spread: 0.5, smear: 6 },
-    build(g, rnd) {
+    build(g, rnd, o, r) {
       vg(g, 0, 0, W, H, [[0, '#0b111e'], [0.28, '#1a243b'], [0.5, '#363f58'], [0.68, '#272d39'], [1, '#121419']]);
       light(g, 800, 320, 720, '140,155,205', 0.25);
       clouds(g, rnd, 20, 20, 260, ['18,24,40', '120,128,160']);
       ridge(g, rnd, 330, 60, '#232c44', 0.9);
       haze(g, 260, 480, '150,160,185', 0, 0.5);
-      church(g, rnd);
-      haze(g, 100, 660, '110,125,160', 0.1, 0.32);
+      const ch = mk(W * r, H * r), cg = ch.getContext('2d');
+      cg.scale(r, r);
+      church(cg, rnd);
+      g.drawImage(ch, 0, 0, W, H);
+      haze(g, 160, 640, '110,125,160', 0.08, 0.3);
       cobbles(g, rnd, 600, [520, 1080]);
       house(g, rnd, { x: 410, w: 190, top: 340, bot: 640, wall: '#8a8d8c', wall2: '#5f6366', sh: '#36574a', litP: 0.25 });
       house(g, rnd, { x: 1000, w: 190, top: 340, bot: 640, wall: '#8c8270', wall2: '#5f584c', sh: '#2c4a66', litP: 0.3 });
@@ -917,13 +962,17 @@
       for (const sy of [190, 310, 430]) {
         g.fillStyle = '#2a1a10';
         g.fillRect(1380, sy, 230, 12);
-        for (let x = 1392; x < 1590; x += 34 + rnd() * 10) {
-          g.fillStyle = `rgb(${120 + rnd() * 30},${78 + rnd() * 20},${40 + rnd() * 10})`;
-          ell(g, x + 14, sy - 14, 18, 13);
+        for (let x = 1396; x < 1590; x += 46 + rnd() * 8) {
+          const a = (rnd() - 0.5) * 0.2;
+          g.fillStyle = `rgb(${125 + rnd() * 30},${80 + rnd() * 18},${40 + rnd() * 10})`;
+          ell(g, x + 20, sy - 12, 24, 11, a);
           g.fill();
-          g.fillStyle = 'rgba(255,220,160,0.25)';
-          ell(g, x + 10, sy - 19, 8, 3, -0.2);
+          g.fillStyle = 'rgba(255,225,170,0.28)';
+          ell(g, x + 16, sy - 17, 14, 3.5, a);
           g.fill();
+          g.strokeStyle = 'rgba(240,200,140,0.5)';
+          g.lineWidth = 2;
+          for (let k = -1; k <= 1; k++) line(g, x + 20 + k * 10 - 4, sy - 18, x + 20 + k * 10 + 4, sy - 10);
         }
       }
       // relógio de pêndulo (caixa)
@@ -1015,22 +1064,20 @@
           g.fill();
         }
       }
-      g.fillStyle = '#e7d8b6';
-      g.beginPath();
-      g.moveTo(880, 548);
-      g.lineTo(880, 500);
-      g.lineTo(1040, 500);
-      g.lineTo(1040, 548);
-      g.closePath();
-      g.fill();
+      g.fillStyle = '#8a8274';
+      g.fillRect(900, 544, 140, 6);
+      g.fillStyle = '#d9c39a';
+      g.fillRect(910, 500, 120, 44);
       g.fillStyle = '#6a3a1e';
-      g.fillRect(880, 518, 160, 10);
-      g.fillStyle = '#3a2214';
-      g.beginPath();
-      g.moveTo(990, 500);
-      g.lineTo(1040, 500);
-      g.lineTo(1040, 548);
-      g.closePath();
+      g.fillRect(910, 516, 120, 7);
+      g.fillStyle = '#efe2c4';
+      ell(g, 970, 500, 60, 12);
+      g.fill();
+      g.fillStyle = '#2a1a10';
+      poly(g, [970, 500, 1030, 500, 1030, 544, 970, 544]);
+      g.fill();
+      g.fillStyle = '#c9a77a';
+      poly(g, [970, 500, 1022, 492, 1022, 536, 970, 544]);
       g.fill();
       g.strokeStyle = 'rgba(220,230,240,0.18)';
       g.lineWidth = 3;
@@ -1104,7 +1151,7 @@
         glow(ctx, 1132 + Math.sin(ph * 6 + i) * 6, 492 - ph * 80, 16 + ph * 22, '220,220,225', 0.12 * Math.sin(ph * Math.PI), 'screen');
       }
       glow(ctx, 1112, 236, 40, '255,90,50', 0.15 + 0.12 * fl(t * 6));
-      glow(ctx, 820, 180, 260, '255,200,130', 0.04 * fl(t * 1.5));
+      glow(ctx, 820, 180, 180, '255,200,130', 0.05 * fl(t * 1.5));
     },
   };
 
@@ -1436,29 +1483,43 @@
       g.stroke();
       for (const c of SALA_CANDLES.slice(3)) candleBody(g, c[0], c[1], 28, 8, 10 + c[2]);
       // móveis cobertos com lençóis
-      const sheet = (pts, sh) => {
-        g.fillStyle = lin(g, pts[0], 0, pts[pts.length - 2], 0, [[0, '#a7a9b2'], [1, '#5c5f6a']]);
-        poly(g, pts);
+      const draped = (x, y, w, h) => {
+        g.beginPath();
+        g.moveTo(x - w * 0.03, y + h);
+        g.bezierCurveTo(x, y + h * 0.7, x + w * 0.02, y + h * 0.5, x + w * 0.04, y + h * 0.42);
+        g.quadraticCurveTo(x + w * 0.04, y + h * 0.28, x + w * 0.14, y + h * 0.3);
+        g.quadraticCurveTo(x + w * 0.18, y + h * 0.32, x + w * 0.2, y + h * 0.3);
+        g.quadraticCurveTo(x + w * 0.22, y, x + w * 0.5, y + h * 0.02);
+        g.quadraticCurveTo(x + w * 0.78, y, x + w * 0.8, y + h * 0.3);
+        g.quadraticCurveTo(x + w * 0.84, y + h * 0.32, x + w * 0.88, y + h * 0.3);
+        g.quadraticCurveTo(x + w * 0.98, y + h * 0.28, x + w * 0.96, y + h * 0.42);
+        g.bezierCurveTo(x + w * 0.98, y + h * 0.5, x + w, y + h * 0.7, x + w * 1.03, y + h);
+        for (let k = 10; k >= 0; k--) g.lineTo(x - w * 0.03 + (w * 1.06 * k) / 10, y + h + (k % 2 ? 8 : 0));
+        g.closePath();
+        g.fillStyle = lin(g, x, y, x + w, y + h, [[0, '#a5a8b3'], [0.6, '#7a7d88'], [1, '#4a4c56']]);
         g.fill();
-        g.strokeStyle = 'rgba(40,40,50,0.35)';
+        g.save();
+        g.clip();
+        g.strokeStyle = 'rgba(30,30,40,0.3)';
+        g.lineWidth = 4;
+        for (let k = 0; k < 7; k++) {
+          const fx = x + w * (0.08 + k * 0.14);
+          g.beginPath();
+          g.moveTo(fx, y + h * 0.45);
+          g.quadraticCurveTo(fx + (rnd() - 0.5) * 20, y + h * 0.75, fx + (rnd() - 0.5) * 16, y + h);
+          g.stroke();
+        }
+        g.strokeStyle = 'rgba(255,255,255,0.12)';
         g.lineWidth = 3;
-        for (const s of sh) line(g, s[0], s[1], s[2], s[3]);
+        g.beginPath();
+        g.moveTo(x + w * 0.24, y + h * 0.12);
+        g.quadraticCurveTo(x + w * 0.5, y - h * 0.02, x + w * 0.74, y + h * 0.1);
+        g.stroke();
+        g.restore();
       };
-      g.save();
-      g.beginPath();
-      g.moveTo(1210, 790);
-      g.bezierCurveTo(1200, 640, 1240, 560, 1300, 540);
-      g.bezierCurveTo(1360, 520, 1380, 600, 1420, 590);
-      g.bezierCurveTo(1480, 560, 1560, 560, 1580, 640);
-      g.lineTo(1600, 790);
-      g.closePath();
-      g.fillStyle = lin(g, 1200, 0, 1600, 0, [[0, '#9a9da8'], [1, '#4a4d58']]);
-      g.fill();
-      g.strokeStyle = 'rgba(30,30,40,0.35)';
-      g.lineWidth = 4;
-      for (let i = 0; i < 9; i++) { const x = 1230 + i * 40; line(g, x, 600 + (i % 2) * 20, x + 10, 790); }
-      g.restore();
-      sheet([1020, 790, 1030, 700, 1070, 660, 1110, 670, 1130, 700, 1140, 790], [[1060, 680, 1050, 790], [1100, 690, 1110, 790]]);
+      draped(1210, 520, 230, 250);
+      draped(1430, 560, 220, 210);
+      draped(1010, 690, 120, 90);
       // chão e tapete
       vg(g, 0, 770, W, H, [[0, '#1a0f0a'], [1, '#0c0705']]);
       g.fillStyle = '#3a1016';
@@ -1486,10 +1547,10 @@
       const list = o.escuro ? [SALA_CANDLES[1]] : SALA_CANDLES;
       for (const c of list) flame(ctx, c[0], c[1] - (c[2] === 1 ? 34 : c[2] < 3 ? 30 : 28) - 5, 15, t, c[2] + 1, 0, o.escuro ? 1.2 : 0.8);
       const f = fl(t * 4);
-      if (o.escuro) glow(ctx, 260, 250, 260, '255,140,60', 0.06 + 0.06 * f);
+      if (o.escuro) glow(ctx, 260, 250, 200, '255,140,60', 0.07 + 0.07 * f);
       else {
-        glow(ctx, 260, 260, 320, '255,150,70', 0.04 + 0.05 * f);
-        glow(ctx, 1130, 280, 320, '255,150,70', 0.04 + 0.05 * fl(t * 4.4 + 1));
+        glow(ctx, 260, 260, 200, '255,150,70', 0.05 + 0.06 * f);
+        glow(ctx, 1130, 280, 200, '255,150,70', 0.05 + 0.06 * fl(t * 4.4 + 1));
       }
     },
   };
@@ -1684,7 +1745,7 @@
       ctx.restore();
       if (!o.escuro) {
         flame(ctx, 856, 478, 16, t, 3, 0, 0.9);
-        glow(ctx, 856, 470, 300, '255,150,70', 0.04 + 0.05 * fl(t * 4.2));
+        glow(ctx, 856, 470, 200, '255,150,70', 0.05 + 0.06 * fl(t * 4.2));
       }
       glow(ctx, 140, 392, 40, '255,80,50', 0.12 + 0.1 * fl(t * 6 + 1));
     },
@@ -1977,9 +2038,10 @@
       g.fillStyle = '#2e2a27';
       g.fillRect(606, 576, 388, 34);
       g.fillStyle = 'rgba(240,230,205,0.85)';
-      for (let i = 0; i < 26; i++) {
-        const x = 608 + rnd() * 384, l = 6 + rnd() * 26;
-        rrect(g, x, 574, 3 + rnd() * 3, l, 2);
+      g.fillStyle = 'rgba(225,212,185,0.55)';
+      for (let i = 0; i < 14; i++) {
+        const x = 608 + rnd() * 384, l = 4 + rnd() * 16;
+        rrect(g, x, 574, 3 + rnd() * 4, l, 2);
         g.fill();
       }
       const lit = poraoLit(velas);
@@ -2004,7 +2066,7 @@
         if (lit[i]) { flame(ctx, x, top, 17, t, i + 1, 0, 0.9); n++; }
         else smokeCurl(ctx, x, top, t, i * 1.7, 80);
       });
-      glow(ctx, 800, 500, 380, '255,140,60', (0.03 + 0.05 * fl(t * 3.7)) * (n / 7));
+      glow(ctx, 800, 500, 240, '255,140,60', (0.04 + 0.06 * fl(t * 3.7)) * (n / 7));
       if (o.aberta) {
         const blink = (t % 6) > 5.82 ? 0 : 1;
         const a = (0.45 + 0.25 * fl(t * 1.3)) * blink;
@@ -2054,8 +2116,14 @@
       // caminho de pedras
       for (let i = 0; i < 12; i++) {
         const u = i / 11, y = lerp(900, 620, Math.pow(u, 0.8)), s = lerp(1, 0.25, u);
-        g.fillStyle = `rgba(${120 - u * 40},${130 - u * 40},${150 - u * 40},0.55)`;
-        ell(g, 800 + Math.sin(u * 3) * 40 * s, y, 70 * s, 18 * s);
+        g.fillStyle = `rgba(${110 - u * 40},${118 - u * 40},${138 - u * 40},0.6)`;
+        const px = 800 + Math.sin(u * 3) * 40 * s;
+        g.beginPath();
+        for (let k = 0; k < 7; k++) {
+          const a = (k / 7) * TAU, rr = 0.75 + rnd() * 0.3;
+          g.lineTo(px + Math.cos(a) * 70 * s * rr, y + Math.sin(a) * 18 * s * rr);
+        }
+        g.closePath();
         g.fill();
       }
       // coreto
@@ -2313,7 +2381,7 @@
       drawFog(ctx, st.fog, 150, 300, t, 9, 0.6);
       ctx.restore();
       flame(ctx, 1100, 478, 18, t, 5, 0, 0.9);
-      glow(ctx, 1100, 470, 320, '255,150,70', 0.04 + 0.05 * fl(t * 3.9));
+      glow(ctx, 1100, 470, 220, '255,150,70', 0.05 + 0.06 * fl(t * 3.9));
     },
   };
 
@@ -2402,7 +2470,7 @@
       for (let i = 0; i < 26; i++) st.sp.push({ x: rnd() < 0.5 ? 40 + rnd() * 260 : 1320 + rnd() * 260, y: 600 + rnd() * 240, p: rnd() * 10 });
     },
     anim(ctx, t, o, st) {
-      glow(ctx, 820, 430, 420, '255,220,160', 0.1 + 0.05 * Math.sin(t * 0.6), 'screen');
+      glow(ctx, 820, 430, 160, '255,230,180', 0.12 + 0.06 * Math.sin(t * 0.6), 'screen');
       drawFog(ctx, st.fog, 470, 230, t, 5, 0.45);
       for (const s of st.sp) {
         const b = Math.pow(Math.max(0, Math.sin(t * 1.4 + s.p * 3)), 6);
@@ -2415,132 +2483,140 @@
   const HOSP_X = [560, 640, 720, 800, 880, 960, 1040];
   const HOSP_H = [40, 52, 34, 58, 38, 48, 36];
   const HOSP_OUT = [0.8, 2.3, 3.9, Infinity, 4.8, 3.1, 1.6];
-  function hospedePath() {
-    const p = new Path2D();
-    p.ellipse(800, 98, 30, 54, -0.06, 0, TAU);
-    const b = new Path2D();
-    b.moveTo(792, 140);
-    b.lineTo(808, 140);
-    b.bezierCurveTo(840, 170, 892, 168, 912, 196);
-    b.bezierCurveTo(936, 250, 932, 330, 940, 380);
-    b.bezierCurveTo(946, 430, 950, 480, 954, 520);
-    b.lineTo(934, 522);
-    b.bezierCurveTo(926, 470, 912, 420, 898, 370);
-    b.bezierCurveTo(886, 320, 876, 270, 866, 240);
-    b.bezierCurveTo(860, 320, 858, 400, 848, 520);
-    b.bezierCurveTo(830, 590, 770, 590, 752, 520);
-    b.bezierCurveTo(742, 400, 740, 320, 734, 240);
-    b.bezierCurveTo(724, 270, 714, 320, 702, 370);
-    b.bezierCurveTo(688, 420, 674, 470, 666, 522);
-    b.lineTo(646, 520);
-    b.bezierCurveTo(650, 480, 654, 430, 660, 380);
-    b.bezierCurveTo(668, 330, 664, 250, 688, 196);
-    b.bezierCurveTo(708, 168, 760, 170, 792, 140);
-    b.closePath();
-    p.addPath(b);
-    return p;
+  // membro afilado (braço, dedo) desenhado como faixa entre pontos
+  function limb(g, pts, w0, w1) {
+    const L = [], R = [];
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i], q = pts[Math.min(i + 1, pts.length - 1)], o = pts[Math.max(i - 1, 0)];
+      const dx = q[0] - o[0], dy = q[1] - o[1], d = Math.hypot(dx, dy) || 1;
+      const w = lerp(w0, w1, i / (pts.length - 1)) / 2;
+      L.push([p[0] - (dy / d) * w, p[1] + (dx / d) * w]);
+      R.push([p[0] + (dy / d) * w, p[1] - (dx / d) * w]);
+    }
+    g.beginPath();
+    g.moveTo(L[0][0], L[0][1]);
+    for (const p of L) g.lineTo(p[0], p[1]);
+    for (let i = R.length - 1; i >= 0; i--) g.lineTo(R[i][0], R[i][1]);
+    g.closePath();
+    g.fill();
   }
-  function hospedeFingers(g) {
-    g.lineCap = 'round';
-    for (const [wx, dir] of [[656, -1], [944, 1]]) {
+  function drawHospede(fg, rnd) {
+    fg.fillStyle = '#020204';
+    ell(fg, 806, 90, 25, 50, 0.13);
+    fg.fill();
+    limb(fg, [[804, 128], [800, 150], [797, 176]], 16, 22);
+    // tronco: costelas estreitas que se desfazem na cintura
+    fg.beginPath();
+    fg.moveTo(796, 168);
+    fg.bezierCurveTo(760, 170, 724, 160, 708, 168);
+    fg.bezierCurveTo(704, 200, 730, 230, 742, 260);
+    fg.bezierCurveTo(748, 330, 758, 400, 770, 470);
+    fg.lineTo(830, 470);
+    fg.bezierCurveTo(842, 400, 852, 330, 858, 260);
+    fg.bezierCurveTo(870, 230, 896, 204, 892, 172);
+    fg.bezierCurveTo(870, 164, 834, 170, 796, 168);
+    fg.closePath();
+    fg.fill();
+    // ombros erguidos e braços longos
+    limb(fg, [[716, 176], [700, 240], [684, 320], [676, 380], [670, 450], [664, 520]], 26, 11);
+    limb(fg, [[886, 178], [902, 246], [914, 322], [926, 382], [934, 452], [944, 520]], 26, 11);
+    for (const [wx, dir] of [[664, -1], [944, 1]]) {
       for (let f = 0; f < 5; f++) {
-        const spread = (f - 2) * 0.2;
-        const len = 70 + (f === 2 ? 30 : f === 1 || f === 3 ? 20 : 0);
-        const ang = Math.PI / 2 + spread + dir * 0.12;
-        let x = wx, y = 520;
-        for (let s = 0; s < 6; s++) {
-          const nx = x + Math.cos(ang + dir * s * 0.05) * len / 6, ny = y + Math.sin(ang + dir * s * 0.05) * len / 6;
-          g.lineWidth = lerp(7, 2, s / 5);
-          line(g, x, y, nx, ny);
-          x = nx; y = ny;
+        const spread = (f - 2) * 0.22, len = 74 + (f === 2 ? 30 : f === 1 || f === 3 ? 18 : 0);
+        const pts = [];
+        for (let k = 0; k <= 6; k++) {
+          const a = Math.PI / 2 + spread + dir * (0.1 + k * 0.05);
+          pts.push([wx + Math.cos(a) * (len * k) / 6 + dir * Math.sin(k * 0.9) * 2, 516 + Math.sin(a) * (len * k) / 6]);
         }
+        limb(fg, pts, 6, 1.5);
       }
+    }
+    // bordas esfiapadas e cintura em fumaça
+    fg.save();
+    fg.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 90; i++) soft(fg, 720 + rnd() * 160, 400 + rnd() * 120, 14 + rnd() * 26, `rgba(0,0,0,${0.3 + rnd() * 0.4})`);
+    fg.restore();
+    fg.strokeStyle = 'rgba(70,80,110,0.14)';
+    fg.lineWidth = 2;
+    for (let i = 0; i < 6; i++) {
+      fg.beginPath();
+      fg.moveTo(772, 240 + i * 24);
+      fg.quadraticCurveTo(800, 232 + i * 24, 832, 240 + i * 24);
+      fg.stroke();
     }
   }
   SCENES.hospede = {
-    brush: { n: 12000, len: [6, 16], width: [2, 4], alpha: 0.2, ang: Math.PI / 2, spread: 0.6, smear: 6 },
+    brush: { n: 12000, alpha: 0.2 },
     build(g, rnd, o, r) {
-      g.fillStyle = '#05060a';
+      g.fillStyle = '#040508';
       g.fillRect(0, 0, W, H);
-      stoneWall(g, rnd, 0, 0, W, 640, [22, 22, 26], 10, '#0b0b0e');
-      vg(g, 0, 0, W, 640, [[0, 'rgba(4,5,8,0.6)'], [1, 'rgba(4,5,8,0.1)']]);
-      vg(g, 0, 600, W, H, [[0, '#121216'], [1, '#07070a']]);
+      stoneWall(g, rnd, 0, 0, W, 620, [26, 25, 29], 10, '#09090c');
+      vg(g, 0, 0, W, 620, [[0, 'rgba(3,4,7,0.85)'], [0.6, 'rgba(3,4,7,0.45)'], [1, 'rgba(3,4,7,0.1)']]);
+      vg(g, 0, 600, W, H, [[0, '#131216'], [1, '#060608']]);
+      light(g, 800, 600, 520, '255,140,60', 0.22);
+      light(g, 800, 260, 460, '90,105,145', 0.4);
       // figura
       const fc = mk(W * r, H * r), fg = fc.getContext('2d');
       fg.scale(r, r);
-      const path = hospedePath();
-      fg.fillStyle = '#020204';
-      fg.fill(path);
-      fg.strokeStyle = '#020204';
-      hospedeFingers(fg);
-      // costelas tênues
-      fg.strokeStyle = 'rgba(90,100,130,0.12)';
-      fg.lineWidth = 2;
-      for (let i = 0; i < 6; i++) { fg.beginPath(); fg.moveTo(770, 260 + i * 26); fg.quadraticCurveTo(800, 250 + i * 26, 830, 260 + i * 26); fg.stroke(); }
-      // fumaça baixa
-      fg.save();
-      fg.globalCompositeOperation = 'destination-out';
-      for (let i = 0; i < 60; i++) soft(fg, 700 + rnd() * 200, 470 + rnd() * 120, 18 + rnd() * 30, 'rgba(0,0,0,0.55)');
-      fg.restore();
-      const halo = softBlur(fc, 10 * r);
+      drawHospede(fg, rnd);
       g.save();
-      g.globalAlpha = 0.9;
-      g.drawImage(halo, 0, 0, W, H);
-      g.drawImage(softBlur(fc, 24 * r), 0, 0, W, H);
+      g.globalAlpha = 0.85;
+      g.drawImage(softBlur(fc, 12 * r), 0, 0, W, H);
+      g.drawImage(softBlur(fc, 30 * r), 0, 0, W, H);
       g.restore();
-      // fiapos de fumaça
-      g.strokeStyle = 'rgba(8,8,12,0.6)';
-      for (let i = 0; i < 80; i++) {
-        const x = 650 + rnd() * 300, y = 60 + rnd() * 480;
-        if (!fg.isPointInPath(path, x * r, y * r)) continue;
-        g.lineWidth = 1 + rnd() * 3;
+      // fiapos de fumaça saindo da silhueta
+      const data = fg.getImageData(0, 0, fc.width, fc.height).data;
+      const A = (x, y) => { const ix = Math.round(x * r), iy = Math.round(y * r); return ix < 0 || iy < 0 || ix >= fc.width || iy >= fc.height ? 0 : data[(iy * fc.width + ix) * 4 + 3]; };
+      g.strokeStyle = 'rgba(6,6,10,0.35)';
+      for (let i = 0, n = 0; i < 4000 && n < 70; i++) {
+        const x = 640 + rnd() * 320, y = 40 + rnd() * 520;
+        if (A(x, y) < 150 || (A(x - 12, y) > 20 && A(x + 12, y) > 20)) continue;
+        n++;
+        const d = A(x - 12, y) < 20 ? -1 : 1;
+        g.lineWidth = 3 + rnd() * 6;
         g.beginPath();
         g.moveTo(x, y);
-        g.bezierCurveTo(x + (rnd() - 0.5) * 60, y - 20, x + (rnd() - 0.5) * 80, y - 50, x + (rnd() - 0.5) * 90, y - 80 - rnd() * 40);
+        g.bezierCurveTo(x + d * 20 * rnd(), y - 20, x + d * (20 + rnd() * 50), y - 50, x + d * (30 + rnd() * 70), y - 80 - rnd() * 50);
         g.stroke();
       }
       g.drawImage(fc, 0, 0, W, H);
-      // contorno frio
+      // a luz das velas toca as mãos por baixo
       const rimC = mk(W * r, H * r), rg = rimC.getContext('2d');
       rg.drawImage(fc, 0, 0);
       rg.globalCompositeOperation = 'source-in';
-      rg.fillStyle = 'rgb(120,140,180)';
+      rg.fillStyle = lin(rg, 0, 300 * r, 0, 640 * r, [[0, 'rgba(255,150,70,0)'], [1, 'rgba(255,150,70,1)']]);
       rg.fillRect(0, 0, rimC.width, rimC.height);
       rg.globalCompositeOperation = 'destination-out';
-      rg.drawImage(fc, -5 * r, 3 * r);
+      rg.drawImage(fc, 0, -4 * r);
       g.save();
-      g.globalAlpha = 0.35;
-      g.drawImage(softBlur(rimC, 2 * r), 0, 0, W, H);
+      g.globalAlpha = 0.5;
+      g.drawImage(softBlur(rimC, 1.5 * r), 0, 0, W, H);
       g.restore();
-      // correntes partidas
       chain(g, 520, 700, 700, 690, 12);
       chain(g, 900, 710, 1080, 700, 14);
       chain(g, 760, 760, 860, 740, 6);
-      // parapeito e velas
       g.fillStyle = '#26221f';
       g.fillRect(520, 600, 560, 20);
       g.fillStyle = '#171513';
       g.fillRect(526, 620, 548, 40);
       HOSP_X.forEach((x, i) => candleBody(g, x, 602, HOSP_H[i], 13, 70 + i));
-      light(g, 800, 120, 500, '70,90,140', 0.1);
     },
     prep(st, o, rnd) {
       st.wisps = [];
-      const path = hospedePath();
-      const c = mk(4, 4).getContext('2d');
-      let guard = 0;
-      while (st.wisps.length < 44 && guard++ < 4000) {
-        const x = 640 + rnd() * 320, y = 40 + rnd() * 500;
-        if (c.isPointInPath(path, x, y) && (!c.isPointInPath(path, x - 14, y) || !c.isPointInPath(path, x + 14, y) || !c.isPointInPath(path, x, y - 14))) {
-          st.wisps.push({ x, y, p: rnd(), d: x < 800 ? -1 : 1, s: 0.15 + rnd() * 0.2 });
-        }
+      const c = mk(W, H), cg = c.getContext('2d');
+      drawHospede(cg, mulberry32(5));
+      const data = cg.getImageData(0, 0, W, H).data;
+      const A = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? 0 : data[((y | 0) * W + (x | 0)) * 4 + 3]);
+      for (let i = 0; i < 6000 && st.wisps.length < 40; i++) {
+        const x = 640 + rnd() * 320, y = 40 + rnd() * 520;
+        if (A(x, y) > 150 && (A(x - 14, y) < 20 || A(x + 14, y) < 20 || A(x, y - 14) < 20)) st.wisps.push({ x, y, p: rnd(), d: x < 800 ? -1 : 1, s: 0.15 + rnd() * 0.2 });
       }
     },
     anim(ctx, t, o, st) {
       for (const w of st.wisps) {
         const ph = (t * w.s + w.p) % 1;
         const x = w.x + w.d * ph * 26 + Math.sin(t * 1.3 + w.p * 9) * 5, y = w.y - ph * 60;
-        glow(ctx, x, y, 22 + ph * 26, '10,10,16', 0.75 * Math.sin(ph * Math.PI), 'source-over');
+        glow(ctx, x, y, 20 + ph * 22, '8,8,12', 0.7 * Math.sin(ph * Math.PI), 'source-over');
       }
       let lit = 0;
       HOSP_X.forEach((x, i) => {
@@ -2551,12 +2627,12 @@
           lit++;
         } else smokeCurl(ctx, x, top, t, i * 1.3, 100);
       });
-      glow(ctx, 800, 560, 480, '255,140,60', 0.06 * lit / 7 + 0.03 * fl(t * 5));
+      glow(ctx, 800, 580, 300, '255,140,60', (0.1 * lit) / 7 + 0.03 * fl(t * 5));
       const a = 0.65 + 0.35 * fl(t * 1.7);
-      for (const ex of [787, 813]) {
-        glow(ctx, ex, 92, 16, '200,220,255', a * 0.7);
+      for (const [ex, ey] of [[795, 82], [818, 85]]) {
+        glow(ctx, ex, ey, 16, '200,220,255', a * 0.7);
         ctx.fillStyle = `rgba(235,242,255,${a})`;
-        ell(ctx, ex, 92, 5, 2.2, ex < 800 ? 0.15 : -0.15);
+        ell(ctx, ex, ey, 5, 2, 0.13);
         ctx.fill();
       }
     },
@@ -2661,7 +2737,7 @@
       vg(g, 0, 640, W, H, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.5)']]);
     },
     anim(ctx, t) {
-      glow(ctx, 560, 180, 500, '255,190,120', 0.04 + 0.02 * Math.sin(t * 0.8), 'screen');
+      glow(ctx, 640, 220, 220, '255,200,140', 0.05 + 0.03 * Math.sin(t * 0.8), 'screen');
     },
   };
 
@@ -2669,15 +2745,40 @@
     build(g) { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); },
   };
 
+  // manchas grandes e suaves que quebram as áreas chapadas, como veladuras de tinta
+  function mottle(c, rnd, r) {
+    const g = c.getContext('2d');
+    g.save();
+    g.setTransform(r, 0, 0, r, 0, 0);
+    g.globalCompositeOperation = 'soft-light';
+    for (let i = 0; i < 80; i++) {
+      soft(g, rnd() * W, rnd() * H, 50 + rnd() * 200, rnd() < 0.5 ? 'rgba(255,240,220,0.14)' : 'rgba(0,0,0,0.18)', 0.4 + rnd() * 0.8, rnd() * TAU);
+    }
+    g.restore();
+  }
   function buildScene(nome, opts, r) {
     const S = SCENES[nome];
     const c = mk(W * r, H * r), g = c.getContext('2d');
     g.scale(r, r);
     const rnd = mulberry32(hashStr('cena:' + nome));
     S.build(g, rnd, opts, r);
-    if (S.brush) brushPass(c, mulberry32(hashStr('pincel:' + nome)), Object.assign({ r }, S.brush));
+    if (S.brush) {
+      mottle(c, mulberry32(hashStr('veladura:' + nome)), r);
+      brushPass(c, mulberry32(hashStr('pincel:' + nome)), { r, n: (S.brush.n || 15000) * 1.6, alpha: S.brush.alpha || 0.22, len: [3, 10], width: [2, 5], ang: 0, spread: TAU, smear: 7, vary: 0.16 });
+    }
     return c;
   }
+  // memória curta das últimas cenas pintadas (voltar a uma cena é instantâneo)
+  const sceneMemo = new Map();
+  function getScene(nome, opts, r) {
+    const key = nome + '|' + JSON.stringify(opts) + '|' + r;
+    if (sceneMemo.has(key)) { const v = sceneMemo.get(key); sceneMemo.delete(key); sceneMemo.set(key, v); return v; }
+    const v = buildScene(nome, opts, r);
+    sceneMemo.set(key, v);
+    while (sceneMemo.size > 3) sceneMemo.delete(sceneMemo.keys().next().value);
+    return v;
+  }
+  const escalaRes = (e) => clamp(Math.round((e || 1) * 4) / 4, 0.5, 1.25);
 
   // ======================================================================== PERSONAGENS
   function facePath(h) {
@@ -2691,41 +2792,81 @@
     p.closePath();
     return p;
   }
+  // tronco até a cintura: trapézio inclinado, ombro arredondado, braços caídos
   function torsoPath(S) {
-    const c = 300, n = S.neckW, s = S.sw, y = S.shY || 470;
+    const c = 300, n = S.neckW, s = S.sw, sy = S.shY || 462;
     const p = new Path2D();
-    p.moveTo(c - n, 410);
-    p.bezierCurveTo(c - n - 6, y - 22, c - s + 76, y - 14, c - s + 20, y + 10);
-    p.bezierCurveTo(c - s - 18, y + 30, c - s - 30, y + 120, c - s - 28, 920);
-    p.lineTo(c + s + 28, 920);
-    p.bezierCurveTo(c + s + 30, y + 120, c + s + 18, y + 30, c + s - 20, y + 10);
-    p.bezierCurveTo(c + s - 76, y - 14, c + n + 6, y - 22, c + n, 410);
+    p.moveTo(c - n, 396);
+    p.bezierCurveTo(c - n - 6, sy - 34, c - s + 52, sy - 26, c - s + 10, sy - 2);
+    p.bezierCurveTo(c - s - 14, sy + 10, c - s - 18, sy + 50, c - s - 16, sy + 96);
+    p.bezierCurveTo(c - s - 14, sy + 190, c - s + 2, 690, c - s + 2, 760);
+    p.bezierCurveTo(c - s + 2, 820, c - s - 6, 870, c - s - 8, 920);
+    p.lineTo(c + s + 8, 920);
+    p.bezierCurveTo(c + s + 6, 870, c + s - 2, 820, c + s - 2, 760);
+    p.bezierCurveTo(c + s - 2, 690, c + s + 14, sy + 190, c + s + 16, sy + 96);
+    p.bezierCurveTo(c + s + 18, sy + 50, c + s + 14, sy + 10, c + s - 10, sy - 2);
+    p.bezierCurveTo(c + s - 52, sy - 26, c + n + 6, sy - 34, c + n, 396);
     p.closePath();
     return p;
+  }
+  function armLines(g, S, rgba) {
+    const c = 300, s = S.sw, sy = S.shY || 462;
+    g.save();
+    g.strokeStyle = rgba;
+    g.lineWidth = 5;
+    g.lineCap = 'round';
+    for (const k of [-1, 1]) {
+      g.beginPath();
+      g.moveTo(c + k * (s - 30), sy + 70);
+      g.bezierCurveTo(c + k * (s - 26), sy + 170, c + k * (s - 36), 700, c + k * (s - 40), 920);
+      g.stroke();
+      for (let y = sy + 90; y < 900; y += 40) soft(g, c + k * (s - 30 - (y - sy) * 0.02), y, 34, 'rgba(0,0,0,0.12)', 1.6);
+      soft(g, c + k * (s - 4), sy + 40, 46, 'rgba(255,235,210,0.08)', 0.8);
+    }
+    g.restore();
   }
   function neckPath(S, y0, y1) {
     const p = new Path2D(), n = S.neckW;
     p.moveTo(300 - n + 2, y0);
     p.lineTo(300 + n - 2, y0);
-    p.quadraticCurveTo(300 + n, (y0 + y1) / 2, 300 + n + 6, y1);
-    p.lineTo(300 - n - 6, y1);
+    p.quadraticCurveTo(300 + n, (y0 + y1) / 2, 300 + n + 8, y1);
+    p.lineTo(300 - n - 8, y1);
     p.quadraticCurveTo(300 - n, (y0 + y1) / 2, 300 - n + 2, y0);
     p.closePath();
     return p;
   }
-  function strands(g, rnd, n, from, to, col, w) {
+  function strands(g, rnd, n, from, to, col, w, bend) {
     g.save();
     g.lineCap = 'round';
     for (let i = 0; i < n; i++) {
       const a = from(rnd), b = to(rnd, a);
+      const k = bend == null ? 30 : bend;
       g.strokeStyle = col(rnd);
       g.lineWidth = w[0] + rnd() * (w[1] - w[0]);
       g.beginPath();
       g.moveTo(a[0], a[1]);
-      g.bezierCurveTo(lerp(a[0], b[0], 0.3) + (rnd() - 0.5) * 30, lerp(a[1], b[1], 0.3), lerp(a[0], b[0], 0.7) + (rnd() - 0.5) * 30, lerp(a[1], b[1], 0.7), b[0], b[1]);
+      g.bezierCurveTo(lerp(a[0], b[0], 0.3) + (rnd() - 0.5) * k, lerp(a[1], b[1], 0.3), lerp(a[0], b[0], 0.7) + (rnd() - 0.5) * k, lerp(a[1], b[1], 0.7), b[0], b[1]);
       g.stroke();
     }
     g.restore();
+  }
+  function cutOut(g, path) {
+    g.save();
+    g.globalCompositeOperation = 'destination-out';
+    g.fill(path);
+    g.restore();
+  }
+  // camada temporária com o mesmo tamanho/escala da camada da cabeça
+  function sub(gh) {
+    const c = mk(gh.canvas.width, gh.canvas.height), g = c.getContext('2d');
+    g.setTransform(gh.getTransform());
+    return [c, g];
+  }
+  function stamp(gh, c) {
+    gh.save();
+    gh.setTransform(1, 0, 0, 1, 0, 0);
+    gh.drawImage(c, 0, 0);
+    gh.restore();
   }
   // traços do rosto: discretos, em claro-escuro, sem desenho de cartoon
   function faceFeatures(g, S, E, rnd, opt) {
@@ -2745,7 +2886,7 @@
       if (!E.eyes) {
         if (E.wide) { g.fillStyle = 'rgba(220,210,200,0.22)'; ell(g, x, ey + 1, rx * 0.15, ry * 0.05); g.fill(); }
         g.fillStyle = 'rgba(18,9,7,0.7)';
-        ell(g, x, ey + 1, rx * 0.15 * (E.wide ? 1 : 1), ry * 0.034 * wide);
+        ell(g, x, ey + 1, rx * 0.15, ry * 0.034 * wide);
         g.fill();
         g.fillStyle = 'rgba(8,4,3,0.75)';
         ell(g, x + rx * 0.01, ey + 1, rx * 0.055, ry * 0.03 * wide);
@@ -2755,13 +2896,11 @@
         ell(g, x, ey + 1, rx * 0.17, ry * 0.05);
         g.fill();
       }
-      // pálpebra
       g.strokeStyle = 'rgba(30,14,10,0.45)';
       g.lineWidth = 2;
       g.beginPath();
       g.ellipse(x, ey + 2, rx * 0.17, ry * 0.05 * wide, 0, Math.PI * 1.08, Math.PI * 1.92);
       g.stroke();
-      // sobrancelhas
       const inner = cx + s * rx * 0.16, outer = cx + s * rx * 0.62;
       const by = ey - ry * 0.16;
       let di = 0, dout = 0;
@@ -2782,7 +2921,6 @@
       ell(g, cx - ex - rx * 0.03, ey - 1, 1.6, 1.6);
       g.fill();
     }
-    // nariz
     g.strokeStyle = 'rgba(40,20,14,0.3)';
     g.lineWidth = 2.5;
     g.beginPath();
@@ -2796,7 +2934,6 @@
     g.fill();
     ell(g, cx + rx * 0.1, cy + ry * 0.42, rx * 0.04, ry * 0.015);
     g.fill();
-    // boca
     const my = cy + ry * 0.6, mw = rx * (S.mouthW || 0.24), cv = E.mouth || 0;
     soft(g, cx, my + ry * 0.02, mw * 1.1, `rgba(${S.lip || '130,55,48'},0.38)`, 0.3);
     g.strokeStyle = 'rgba(40,14,10,0.6)';
@@ -2806,152 +2943,9 @@
     g.quadraticCurveTo(cx, my + cv * ry * 0.05, cx + mw, my - cv * ry * 0.03);
     g.stroke();
     soft(g, cx - rx * 0.05, my + ry * 0.09, mw * 0.6, 'rgba(255,220,200,0.14)', 0.35);
-    // queixo e maxilar
     soft(g, cx + rx * 0.2, cy + ry * 0.95, rx * 0.8, 'rgba(20,10,6,0.35)', 0.35);
     if (o.extra) o.extra(g, cx, cy, rx, ry, ey, ex);
     g.restore();
-  }
-
-  // ---- Helena
-  function drawHelena(gb, gd, gh, S, E, rnd) {
-    const { cx, cy, rx, ry } = S.head;
-    // cabelo de trás
-    const back = new Path2D();
-    back.moveTo(300, 166);
-    back.bezierCurveTo(374, 158, 408, 214, 404, 290);
-    back.bezierCurveTo(402, 352, 424, 400, 448, 452);
-    back.bezierCurveTo(472, 504, 452, 562, 470, 612);
-    back.bezierCurveTo(482, 652, 452, 684, 430, 690);
-    back.bezierCurveTo(382, 706, 340, 680, 300, 700);
-    back.bezierCurveTo(258, 690, 220, 710, 172, 690);
-    back.bezierCurveTo(150, 680, 118, 650, 130, 612);
-    back.bezierCurveTo(148, 562, 128, 504, 152, 452);
-    back.bezierCurveTo(176, 400, 198, 352, 196, 290);
-    back.bezierCurveTo(192, 214, 226, 158, 300, 166);
-    back.closePath();
-    gb.fillStyle = S.hair;
-    gb.fill(back);
-    gb.save();
-    gb.clip(back);
-    strands(gb, rnd, 160, (r) => [200 + r() * 200, 170 + r() * 60], (r, a) => [a[0] + (a[0] - 300) * 0.4 + (r() - 0.5) * 40, 600 + r() * 100],
-      (r) => `rgba(${S.hairHi},${0.08 + r() * 0.16})`, [1, 2.5]);
-    gb.restore();
-    // pescoço e corpo
-    gd.fillStyle = S.skin;
-    gd.fill(neckPath(S, 330, 470));
-    soft(gd, 300, 392, 60, 'rgba(20,10,6,0.6)', 0.5);
-    const torso = torsoPath(S);
-    gd.fillStyle = S.cloth;
-    gd.fill(torso);
-    for (const s of [-1, 1]) { gd.fillStyle = S.cloth; ell(gd, 300 + s * (S.sw - 16), 486, 44, 34, s * 0.3); gd.fill(); }
-    gd.save();
-    gd.clip(torso);
-    gd.strokeStyle = 'rgba(80,60,40,0.25)';
-    gd.lineWidth = 3;
-    for (const s of [-1, 1]) {
-      gd.beginPath();
-      gd.moveTo(300 + s * 90, 500);
-      gd.quadraticCurveTo(300 + s * 60, 640, 300 + s * 70, 900);
-      gd.stroke();
-    }
-    gd.fillStyle = 'rgba(240,230,210,0.18)';
-    for (let i = 0; i < 70; i++) {
-      const x = 215 + rnd() * 170, y = 455 + rnd() * 85;
-      gd.beginPath();
-      gd.arc(x, y, 2 + rnd() * 3, 0, TAU);
-      gd.fill();
-    }
-    gd.strokeStyle = 'rgba(90,70,50,0.3)';
-    gd.lineWidth = 2;
-    gd.beginPath();
-    gd.moveTo(200, 545);
-    gd.quadraticCurveTo(300, 565, 400, 545);
-    gd.stroke();
-    gd.fillStyle = 'rgba(60,40,30,0.25)';
-    gd.fillRect(140, 815, 320, 16);
-    for (let x = 150; x < 450; x += 14) { gd.strokeStyle = 'rgba(60,40,30,0.25)'; line(gd, x, 831, x + 4, 900); }
-    gd.restore();
-    // gola alta de renda
-    const collar = new Path2D();
-    collar.moveTo(300 - S.neckW - 8, 452);
-    collar.lineTo(300 - S.neckW - 3, 392);
-    collar.quadraticCurveTo(300, 384, 300 + S.neckW + 3, 392);
-    collar.lineTo(300 + S.neckW + 8, 452);
-    collar.quadraticCurveTo(300, 462, 300 - S.neckW - 8, 452);
-    collar.closePath();
-    gd.fillStyle = '#e6dcc6';
-    gd.fill(collar);
-    gd.fillStyle = '#e6dcc6';
-    for (let x = 300 - S.neckW - 2; x <= 300 + S.neckW + 2; x += 7) { ell(gd, x, 391 + Math.abs(x - 300) * 0.12, 4, 4); gd.fill(); }
-    gd.save();
-    gd.clip(collar);
-    gd.fillStyle = 'rgba(110,90,70,0.35)';
-    for (let y = 398; y < 456; y += 7) for (let x = 262; x < 340; x += 7) { ell(gd, x + (y % 14 ? 3.5 : 0), y, 1.4, 1.4); gd.fill(); }
-    gd.strokeStyle = 'rgba(120,100,80,0.3)';
-    gd.lineWidth = 1;
-    for (let x = 266; x < 336; x += 5) line(gd, x, 396, x, 454);
-    gd.restore();
-    // botões de pérola
-    for (let y = 474; y < 900; y += 34) {
-      gd.fillStyle = 'rgba(40,30,20,0.4)';
-      ell(gd, 301, y + 1.5, 5, 5);
-      gd.fill();
-      gd.fillStyle = '#eee6d6';
-      ell(gd, 300, y, 4.5, 4.5);
-      gd.fill();
-      gd.fillStyle = 'rgba(255,255,255,0.8)';
-      ell(gd, 298.5, y - 1.5, 1.4, 1.4);
-      gd.fill();
-    }
-    medallion(gd, 300, 566, 276, 452, 324, 452);
-    // rosto e cabelo da frente
-    gh.fillStyle = S.skin;
-    gh.fill(facePath(S.head));
-    faceFeatures(gh, S, E, rnd);
-    const front = mk(gh.canvas.width, gh.canvas.height), fg = front.getContext('2d');
-    fg.setTransform(gh.getTransform());
-    const outer = new Path2D();
-    outer.moveTo(300, 168);
-    outer.bezierCurveTo(370, 162, 398, 214, 396, 272);
-    outer.bezierCurveTo(394, 330, 394, 380, 406, 430);
-    outer.bezierCurveTo(420, 480, 424, 540, 410, 600);
-    outer.bezierCurveTo(402, 632, 380, 642, 366, 624);
-    outer.lineTo(232, 624);
-    outer.bezierCurveTo(218, 642, 198, 632, 190, 600);
-    outer.bezierCurveTo(176, 540, 180, 480, 194, 430);
-    outer.bezierCurveTo(206, 380, 206, 330, 204, 272);
-    outer.bezierCurveTo(202, 214, 230, 162, 300, 168);
-    outer.closePath();
-    fg.fillStyle = S.hair;
-    fg.fill(outer);
-    fg.save();
-    fg.clip(outer);
-    strands(fg, rnd, 150, (r) => [282 + r() * 14, 196 + r() * 10],
-      (r) => { const side = r() < 0.55 ? -1 : 1; return [300 + side * (70 + r() * 40), 300 + r() * 320]; },
-      (r) => `rgba(${S.hairHi},${0.1 + r() * 0.2})`, [1, 2.4]);
-    fg.restore();
-    const win = new Path2D();
-    win.moveTo(cx - rx * 0.86, 920);
-    win.lineTo(cx - rx * 0.86, cy + ry * 0.7);
-    win.bezierCurveTo(cx - rx * 0.9, cy + ry * 0.2, cx - rx * 0.92, cy - ry * 0.1, cx - rx * 0.8, cy - ry * 0.42);
-    win.bezierCurveTo(cx - rx * 0.6, cy - ry * 0.7, cx - rx * 0.3, cy - ry * 0.8, cx - rx * 0.12, cy - ry * 0.74);
-    win.bezierCurveTo(cx + rx * 0.1, cy - ry * 0.66, cx + rx * 0.6, cy - ry * 0.56, cx + rx * 0.84, cy - ry * 0.12);
-    win.bezierCurveTo(cx + rx * 0.92, cy + ry * 0.2, cx + rx * 0.9, cy + ry * 0.6, cx + rx * 0.76, cy + ry * 1.12);
-    win.bezierCurveTo(cx + rx * 0.72, cy + ry * 1.4, cx + rx * 0.8, cy + ry * 2, cx + rx * 0.86, 920);
-    win.closePath();
-    fg.save();
-    fg.globalCompositeOperation = 'destination-out';
-    fg.fill(win);
-    fg.restore();
-    // sombra que o cabelo projeta no rosto
-    gh.save();
-    gh.clip(facePath(S.head));
-    soft(gh, cx + rx * 0.5, cy - ry * 0.55, rx * 0.8, 'rgba(15,8,5,0.5)', 0.5);
-    gh.restore();
-    gh.save();
-    gh.setTransform(1, 0, 0, 1, 0, 0);
-    gh.drawImage(front, 0, 0);
-    gh.restore();
   }
   function medallion(g, x, y, ax, ay, bx, by) {
     g.strokeStyle = '#b8903e';
@@ -2980,98 +2974,232 @@
     g.fill();
   }
 
-  // ---- Heitor
-  function curlyCap(S, rnd) {
+  // ---- Helena: cabelo longo ondulado, mecha da esquerda sobre o ombro, gola alta de renda
+  function drawHelena(gb, gd, gh, S, E, rnd) {
     const { cx, cy, rx, ry } = S.head;
-    const circles = [];
-    for (let i = 0; i <= 16; i++) {
-      const a = Math.PI * (1.02 + (i / 16) * 0.96);
-      const k = 1 + rnd() * 0.08;
-      circles.push([cx + Math.cos(a) * (rx + 6) * k, cy - 8 + Math.sin(a) * (ry + 8) * k, 22 + rnd() * 10]);
-    }
-    for (let i = 0; i <= 10; i++) {
-      const a = Math.PI * (1.12 + (i / 10) * 0.76);
-      circles.push([cx + Math.cos(a) * rx * 0.7, cy - 14 + Math.sin(a) * ry * 0.85, 26 + rnd() * 8]);
-    }
-    for (const s of [-1, 1]) {
-      for (let k = 0; k < 4; k++) circles.push([cx + s * (rx + 2 + rnd() * 6), cy - 6 + k * 18, 16 + rnd() * 6]);
-    }
-    return circles;
-  }
-  function drawHeitor(gb, gd, gh, S, E, rnd) {
-    const { cx, cy, rx, ry } = S.head;
-    const caps = curlyCap(S, rnd);
-    // nuca encaracolada atrás
+    const back = new Path2D();
+    back.moveTo(300, 164);
+    back.bezierCurveTo(382, 156, 416, 214, 412, 292);
+    back.bezierCurveTo(410, 350, 422, 400, 448, 446);
+    back.bezierCurveTo(472, 492, 462, 560, 476, 612);
+    back.bezierCurveTo(486, 652, 464, 680, 440, 684);
+    back.bezierCurveTo(410, 690, 382, 668, 360, 640);
+    back.lineTo(240, 640);
+    back.bezierCurveTo(220, 666, 196, 672, 176, 652);
+    back.bezierCurveTo(156, 630, 160, 580, 166, 530);
+    back.bezierCurveTo(172, 470, 190, 420, 194, 360);
+    back.bezierCurveTo(198, 300, 190, 214, 300, 164);
+    back.closePath();
     gb.fillStyle = S.hair;
-    for (let i = 0; i < 12; i++) { ell(gb, cx + (rnd() - 0.5) * 150, cy + 40 + rnd() * 80, 20 + rnd() * 10, 18 + rnd() * 8); gb.fill(); }
-    for (const c of caps) { ell(gb, c[0], c[1] + 6, c[2], c[2]); gb.fill(); }
-    // corpo: camisa, colete
+    gb.fill(back);
+    gb.save();
+    gb.clip(back);
+    strands(gb, rnd, 170, (r) => [210 + r() * 180, 168 + r() * 50], (r, a) => [a[0] + (a[0] - 300) * 0.5 + (r() - 0.5) * 40, 560 + r() * 130],
+      (r) => `rgba(${S.hairHi},${0.08 + r() * 0.16})`, [1, 2.5], 50);
+    gb.restore();
+    // corpo
     gd.fillStyle = S.skin;
-    gd.fill(neckPath(S, 330, 480));
-    soft(gd, 300, 392, 70, 'rgba(20,10,6,0.6)', 0.5);
-    soft(gd, 300, 418, 10, 'rgba(255,220,190,0.18)', 1.6);
+    gd.fill(neckPath(S, 330, 470));
+    soft(gd, 300, 392, 60, 'rgba(20,10,6,0.6)', 0.5);
     const torso = torsoPath(S);
     gd.fillStyle = S.cloth;
     gd.fill(torso);
     gd.save();
     gd.clip(torso);
-    gd.strokeStyle = 'rgba(70,60,50,0.3)';
+    armLines(gd, S, 'rgba(70,52,34,0.35)');
+    gd.strokeStyle = 'rgba(80,60,40,0.22)';
     gd.lineWidth = 3;
-    for (const s of [-1, 1]) for (let k = 0; k < 4; k++) {
+    for (const k of [-1, 1]) {
       gd.beginPath();
-      gd.moveTo(300 + s * (150 + k * 12), 500 + k * 40);
-      gd.quadraticCurveTo(300 + s * (190 + k * 6), 650, 300 + s * (200 + k * 4), 900);
+      gd.moveTo(300 + k * 70, 520);
+      gd.quadraticCurveTo(300 + k * 52, 650, 300 + k * 58, 800);
       gd.stroke();
     }
-    // decote em V com pele
+    gd.fillStyle = 'rgba(240,230,210,0.16)';
+    for (let i = 0; i < 70; i++) { gd.beginPath(); gd.arc(222 + rnd() * 156, 456 + rnd() * 80, 2 + rnd() * 3, 0, TAU); gd.fill(); }
+    gd.strokeStyle = 'rgba(70,50,35,0.4)';
+    gd.lineWidth = 3;
+    gd.beginPath();
+    gd.moveTo(170, 800);
+    gd.quadraticCurveTo(300, 818, 430, 800);
+    gd.stroke();
+    gd.lineWidth = 1.5;
+    for (let x = 180; x < 430; x += 16) line(gd, x, 810, x + (x - 300) * 0.05, 900);
+    gd.restore();
+    const collar = new Path2D();
+    collar.moveTo(300 - S.neckW - 8, 452);
+    collar.lineTo(300 - S.neckW - 3, 392);
+    collar.quadraticCurveTo(300, 384, 300 + S.neckW + 3, 392);
+    collar.lineTo(300 + S.neckW + 8, 452);
+    collar.quadraticCurveTo(300, 462, 300 - S.neckW - 8, 452);
+    collar.closePath();
+    gd.fillStyle = '#d9cdb4';
+    gd.fill(collar);
+    for (let x = 300 - S.neckW - 2; x <= 300 + S.neckW + 2; x += 7) { ell(gd, x, 391 + Math.abs(x - 300) * 0.12, 4, 4); gd.fill(); }
+    gd.save();
+    gd.clip(collar);
+    gd.fillStyle = 'rgba(110,90,70,0.28)';
+    for (let y = 398; y < 456; y += 7) for (let x = 262; x < 340; x += 7) { ell(gd, x + (y % 14 ? 3.5 : 0), y, 1.3, 1.3); gd.fill(); }
+    gd.restore();
+    for (let y = 476; y < 790; y += 34) {
+      gd.fillStyle = 'rgba(40,30,20,0.4)';
+      ell(gd, 301, y + 1.5, 5, 5);
+      gd.fill();
+      gd.fillStyle = '#eee6d6';
+      ell(gd, 300, y, 4.5, 4.5);
+      gd.fill();
+      gd.fillStyle = 'rgba(255,255,255,0.8)';
+      ell(gd, 298.5, y - 1.5, 1.4, 1.4);
+      gd.fill();
+    }
+    medallion(gd, 300, 566, 276, 452, 324, 452);
+    // rosto
+    gh.fillStyle = S.skin;
+    gh.fill(facePath(S.head));
+    faceFeatures(gh, S, E, rnd);
+    gh.save();
+    gh.clip(facePath(S.head));
+    soft(gh, cx + rx * 0.45, cy - ry * 0.62, rx * 0.8, 'rgba(15,8,5,0.5)', 0.45);
+    gh.restore();
+    // topo da cabeça (risca de lado)
+    const [cc, cg] = sub(gh);
+    const cap = new Path2D();
+    cap.moveTo(cx - rx - 10, cy + ry * 0.45);
+    cap.bezierCurveTo(cx - rx - 22, cy - ry * 0.4, cx - rx * 0.7, cy - ry - 26, cx, cy - ry - 20);
+    cap.bezierCurveTo(cx + rx * 0.75, cy - ry - 24, cx + rx + 22, cy - ry * 0.45, cx + rx + 12, cy + ry * 0.5);
+    cap.closePath();
+    cg.fillStyle = S.hair;
+    cg.fill(cap);
+    // mecha da esquerda: cai pela frente do ombro
+    const L = new Path2D();
+    L.moveTo(cx - rx * 0.78, cy - ry * 0.35);
+    L.bezierCurveTo(cx - rx - 18, cy - ry * 0.1, cx - rx - 24, cy + ry * 0.5, cx - rx - 14, cy + ry * 0.95);
+    L.bezierCurveTo(cx - rx - 2, cy + ry * 1.4, cx - rx - 28, cy + ry * 1.8, cx - rx - 12, cy + ry * 2.3);
+    L.bezierCurveTo(cx - rx + 2, cy + ry * 2.7, cx - rx - 14, cy + ry * 3.1, cx - rx + 20, cy + ry * 3.55);
+    L.bezierCurveTo(cx - rx + 30, cy + ry * 3.1, cx - rx + 24, cy + ry * 2.6, cx - rx + 36, cy + ry * 2.2);
+    L.bezierCurveTo(cx - rx + 46, cy + ry * 1.7, cx - rx * 0.62, cy + ry * 1.3, cx - rx * 0.84, cy + ry * 0.9);
+    L.bezierCurveTo(cx - rx * 0.95, cy + ry * 0.4, cx - rx * 0.92, cy, cx - rx * 0.78, cy - ry * 0.35);
+    L.closePath();
+    cg.fill(L);
+    // mecha da direita: curta, presa atrás do ombro
+    const R = new Path2D();
+    R.moveTo(cx + rx * 0.6, cy - ry * 0.55);
+    R.bezierCurveTo(cx + rx + 20, cy - ry * 0.25, cx + rx + 24, cy + ry * 0.5, cx + rx + 16, cy + ry * 1.05);
+    R.bezierCurveTo(cx + rx + 10, cy + ry * 1.25, cx + rx - 4, cy + ry * 1.25, cx + rx * 0.86, cy + ry * 1.1);
+    R.bezierCurveTo(cx + rx * 0.93, cy + ry * 0.5, cx + rx * 0.92, cy, cx + rx * 0.6, cy - ry * 0.55);
+    R.closePath();
+    cg.fill(R);
+    const win = new Path2D();
+    win.moveTo(cx - rx * 0.86, cy + ry * 1.3);
+    win.lineTo(cx - rx * 0.86, cy + ry * 0.1);
+    win.bezierCurveTo(cx - rx * 0.92, cy - ry * 0.3, cx - rx * 0.6, cy - ry * 0.72, cx - rx * 0.15, cy - ry * 0.76);
+    win.bezierCurveTo(cx + rx * 0.25, cy - ry * 0.66, cx + rx * 0.7, cy - ry * 0.5, cx + rx * 0.88, cy - ry * 0.02);
+    win.lineTo(cx + rx * 0.88, cy + ry * 1.3);
+    win.closePath();
+    cutOut(cg, win);
+    cg.fill(L);
+    cg.fill(R);
+    cg.save();
+    cg.globalCompositeOperation = 'source-atop';
+    const part = [cx - rx * 0.15, cy - ry * 0.8];
+    strands(cg, rnd, 90, (r) => [part[0] + (r() - 0.5) * 10, part[1] + (r() - 0.5) * 8], (r) => [cx - rx - 14 + r() * 30, cy + r() * ry * 3.4],
+      (r) => `rgba(${S.hairHi},${0.1 + r() * 0.2})`, [1, 2.4], 40);
+    strands(cg, rnd, 70, (r) => [part[0] + (r() - 0.5) * 10, part[1] + (r() - 0.5) * 8], (r) => [cx + rx * 0.7 + r() * 34, cy - ry * 0.2 + r() * ry * 1.3],
+      (r) => `rgba(${S.hairHi},${0.1 + r() * 0.2})`, [1, 2.4], 30);
+    cg.restore();
+    stamp(gh, cc);
+  }
+
+  // ---- Heitor: cabelo cacheado curto, camisa aberta no colarinho e colete
+  function curlyCap(S, rnd) {
+    const { cx, cy, rx, ry } = S.head;
+    const C = [];
+    for (let i = 0; i <= 18; i++) {
+      const a = Math.PI * (1.0 + (i / 18) * 1.0);
+      const k = 1 + rnd() * 0.06;
+      C.push([cx + Math.cos(a) * (rx + 2) * k, cy - 10 + Math.sin(a) * (ry + 6) * k, 15 + rnd() * 8]);
+    }
+    for (let i = 0; i <= 12; i++) {
+      const a = Math.PI * (1.1 + (i / 12) * 0.8);
+      C.push([cx + Math.cos(a) * rx * 0.72, cy - 14 + Math.sin(a) * ry * 0.86, 20 + rnd() * 6]);
+    }
+    return C;
+  }
+  function drawHeitor(gb, gd, gh, S, E, rnd) {
+    const { cx, cy, rx, ry } = S.head;
+    const caps = curlyCap(S, rnd);
+    gb.fillStyle = S.hair;
+    for (const c of caps) { ell(gb, c[0], c[1] + 8, c[2], c[2]); gb.fill(); }
+    for (let i = 0; i < 12; i++) { ell(gb, cx + (rnd() - 0.5) * 84, cy + ry * 0.5 + rnd() * ry * 0.4, 13 + rnd() * 6, 12 + rnd() * 5); gb.fill(); }
     gd.fillStyle = S.skin;
-    poly(gd, [cx - 30, 436, cx + 30, 436, cx + 4, 534, cx - 4, 534]);
+    gd.fill(neckPath(S, 330, 470));
+    const torso = torsoPath(S);
+    gd.fillStyle = S.cloth;
+    gd.fill(torso);
+    gd.save();
+    gd.clip(torso);
+    armLines(gd, S, 'rgba(60,55,48,0.4)');
+    gd.strokeStyle = 'rgba(70,60,50,0.25)';
+    gd.lineWidth = 3;
+    for (const k of [-1, 1]) for (let j = 0; j < 4; j++) {
+      gd.beginPath();
+      gd.moveTo(300 + k * (S.sw - 6 - j * 6), S.shY + 40 + j * 50);
+      gd.quadraticCurveTo(300 + k * (S.sw + 4), 650 + j * 30, 300 + k * (S.sw - 4), 760 + j * 30);
+      gd.stroke();
+    }
+    gd.fillStyle = S.skin;
+    poly(gd, [cx - S.neckW, 394, cx + S.neckW, 394, cx + 6, 540, cx - 6, 540]);
     gd.fill();
-    soft(gd, 300, 520, 26, 'rgba(30,14,8,0.4)', 1.4);
-    medallion(gd, 300, 506, 278, 446, 322, 446);
-    // colarinho
-    gd.fillStyle = '#ddd8cc';
-    poly(gd, [cx - 32, 426, cx - 74, 452, cx - 52, 500, cx - 12, 512, cx - 28, 470]);
-    gd.fill();
-    poly(gd, [cx + 32, 426, cx + 74, 452, cx + 52, 500, cx + 12, 512, cx + 28, 470]);
-    gd.fill();
-    gd.strokeStyle = 'rgba(40,30,20,0.4)';
-    gd.lineWidth = 2;
-    poly(gd, [cx - 32, 426, cx - 74, 452, cx - 52, 500, cx - 12, 512, cx - 28, 470]);
-    gd.stroke();
-    poly(gd, [cx + 32, 426, cx + 74, 452, cx + 52, 500, cx + 12, 512, cx + 28, 470]);
-    gd.stroke();
-    // colete
-    const vest = (s) => {
+    gd.restore();
+    gd.save();
+    gd.globalCompositeOperation = 'source-atop';
+    soft(gd, 300, 384, 80, 'rgba(20,10,6,0.6)', 0.55);
+    gd.restore();
+    gd.save();
+    gd.clip(torso);
+    soft(gd, 300, 525, 26, 'rgba(30,14,8,0.4)', 1.4);
+    medallion(gd, 300, 506, 278, 444, 322, 444);
+    const flapL = [cx - 36, 412, cx - 78, 448, cx - 58, 500, cx - 10, 520, cx - 28, 468];
+    const flapR = flapL.map((v, i) => (i % 2 ? v : 600 - v));
+    for (const f of [flapL, flapR]) {
+      gd.fillStyle = '#dcd7cb';
+      poly(gd, f);
+      gd.fill();
+      gd.strokeStyle = 'rgba(40,30,20,0.4)';
+      gd.lineWidth = 2;
+      gd.stroke();
+    }
+    const vest = (k) => {
+      const s = S.sw, sy = S.shY;
       const p = new Path2D();
-      p.moveTo(cx + s * 52, 460);
-      p.lineTo(cx + s * 118, 476);
-      p.bezierCurveTo(cx + s * 126, 540, cx + s * 150, 600, cx + s * 146, 650);
-      p.lineTo(cx + s * 156, 920);
-      p.lineTo(cx - s * 8, 920);
-      p.lineTo(cx - s * 8, 640);
-      p.bezierCurveTo(cx + s * 4, 590, cx + s * 30, 520, cx + s * 52, 460);
+      p.moveTo(cx + k * 62, sy - 16);
+      p.lineTo(cx + k * (s - 40), sy - 4);
+      p.bezierCurveTo(cx + k * (s - 52), sy + 70, cx + k * (s - 34), sy + 140, cx + k * (s - 30), sy + 200);
+      p.lineTo(cx + k * (s - 34), 920);
+      p.lineTo(cx - k * 8, 920);
+      p.lineTo(cx - k * 8, 650);
+      p.bezierCurveTo(cx + k * 4, 600, cx + k * 34, 520, cx + k * 62, sy - 16);
       p.closePath();
       return p;
     };
-    for (const s of [1, -1]) {
-      const v = vest(s);
+    for (const k of [1, -1]) {
+      const v = vest(k);
       gd.fillStyle = S.vest;
       gd.fill(v);
       gd.save();
       gd.clip(v);
       gd.strokeStyle = 'rgba(120,90,70,0.12)';
       gd.lineWidth = 1.2;
-      for (let k = -400; k < 400; k += 7) line(gd, cx + k, 460, cx + k + 120 * s, 920);
+      for (let q = -400; q < 400; q += 7) line(gd, cx + q, 440, cx + q + 120 * k, 920);
       gd.strokeStyle = 'rgba(0,0,0,0.5)';
       gd.lineWidth = 3;
-      line(gd, cx + s * 70, 770, cx + s * 120, 764);
+      line(gd, cx + k * 66, 780, cx + k * 116, 774);
       gd.restore();
       gd.strokeStyle = 'rgba(0,0,0,0.45)';
       gd.lineWidth = 2;
       gd.stroke(v);
     }
-    for (let y = 660; y < 900; y += 48) {
+    for (let y = 670; y < 900; y += 46) {
       gd.fillStyle = 'rgba(0,0,0,0.5)';
       ell(gd, 301, y + 1.5, 5.5, 5.5);
       gd.fill();
@@ -3083,13 +3211,12 @@
       gd.fill();
     }
     gd.restore();
-    // rosto (barba por fazer)
     gh.fillStyle = S.skin;
     gh.fill(facePath(S.head));
     faceFeatures(gh, S, E, rnd, {
       extra(g) {
-        g.fillStyle = 'rgba(25,15,10,0.12)';
-        for (let i = 0; i < 1400; i++) {
+        g.fillStyle = 'rgba(25,15,10,0.13)';
+        for (let i = 0; i < 1500; i++) {
           const a = rnd() * Math.PI, d = rnd();
           const x = cx + Math.cos(a) * rx * 0.95 * d, y = cy + ry * 0.25 + Math.sin(a) * ry * 0.78 * d;
           if (Math.abs(x - cx) < rx * 0.3 && y < cy + ry * 0.55) continue;
@@ -3097,64 +3224,66 @@
         }
       },
     });
-    const front = mk(gh.canvas.width, gh.canvas.height), fg = front.getContext('2d');
-    fg.setTransform(gh.getTransform());
-    fg.fillStyle = S.hair;
-    for (const c of caps) { ell(fg, c[0], c[1], c[2], c[2]); fg.fill(); }
-    fg.lineCap = 'round';
-    for (let i = 0; i < 360; i++) {
-      const c = caps[(rnd() * caps.length) | 0];
-      const a = rnd() * TAU, d = rnd() * c[2] * 0.8;
-      const x = c[0] + Math.cos(a) * d, y = c[1] + Math.sin(a) * d, r0 = 4 + rnd() * 6;
-      fg.strokeStyle = rnd() < 0.6 ? `rgba(${S.hairHi},${0.15 + rnd() * 0.25})` : 'rgba(0,0,0,0.35)';
-      fg.lineWidth = 1.2 + rnd() * 1.4;
-      fg.beginPath();
-      fg.arc(x, y, r0, rnd() * TAU, rnd() * TAU + 2.6);
-      fg.stroke();
-    }
-    const win = new Path2D();
-    win.moveTo(cx - rx * 0.9, 920);
-    win.lineTo(cx - rx * 0.9, cy + ry * 0.2);
-    win.bezierCurveTo(cx - rx * 0.95, cy - ry * 0.1, cx - rx * 0.86, cy - ry * 0.4, cx - rx * 0.64, cy - ry * 0.54);
-    win.bezierCurveTo(cx - rx * 0.3, cy - ry * 0.66, cx + rx * 0.3, cy - ry * 0.68, cx + rx * 0.66, cy - ry * 0.52);
-    win.bezierCurveTo(cx + rx * 0.88, cy - ry * 0.38, cx + rx * 0.95, cy - ry * 0.1, cx + rx * 0.9, cy + ry * 0.2);
-    win.lineTo(cx + rx * 0.9, 920);
-    win.closePath();
-    fg.save();
-    fg.globalCompositeOperation = 'destination-out';
-    fg.fill(win);
-    fg.restore();
     gh.save();
     gh.clip(facePath(S.head));
-    soft(gh, cx + rx * 0.4, cy - ry * 0.5, rx * 0.8, 'rgba(15,8,5,0.45)', 0.4);
+    soft(gh, cx + rx * 0.3, cy - ry * 0.62, rx * 0.8, 'rgba(15,8,5,0.45)', 0.4);
     gh.restore();
-    gh.save();
-    gh.setTransform(1, 0, 0, 1, 0, 0);
-    gh.drawImage(front, 0, 0);
-    gh.restore();
+    const [cc, cg] = sub(gh);
+    cg.fillStyle = S.hair;
+    for (const c of caps) { ell(cg, c[0], c[1], c[2], c[2]); cg.fill(); }
+    for (const k of [-1, 1]) {
+      ell(cg, cx + k * (rx - 4), cy - ry * 0.08, 16, 36, k * -0.08);
+      cg.fill();
+    }
+    const win = new Path2D();
+    win.moveTo(cx - rx * 0.88, cy + ry * 1.2);
+    win.lineTo(cx - rx * 0.88, cy + ry * 0.2);
+    win.bezierCurveTo(cx - rx * 0.95, cy - ry * 0.1, cx - rx * 0.86, cy - ry * 0.4, cx - rx * 0.62, cy - ry * 0.56);
+    win.bezierCurveTo(cx - rx * 0.3, cy - ry * 0.64, cx + rx * 0.3, cy - ry * 0.66, cx + rx * 0.64, cy - ry * 0.54);
+    win.bezierCurveTo(cx + rx * 0.88, cy - ry * 0.38, cx + rx * 0.95, cy - ry * 0.1, cx + rx * 0.88, cy + ry * 0.2);
+    win.lineTo(cx + rx * 0.88, cy + ry * 1.2);
+    win.closePath();
+    cutOut(cg, win);
+    // cachos caídos na testa
+    for (const [fx, fy, fr] of [[-0.32, -0.6, 13], [-0.05, -0.66, 15], [0.22, -0.62, 12]]) { ell(cg, cx + fx * rx, cy + fy * ry, fr, fr * 0.9); cg.fill(); }
+    cg.save();
+    cg.globalCompositeOperation = 'source-atop';
+    cg.lineCap = 'round';
+    for (let i = 0; i < 420; i++) {
+      const c = caps[(rnd() * caps.length) | 0];
+      const a = rnd() * TAU, d = rnd() * c[2] * 0.85;
+      const x = c[0] + Math.cos(a) * d, y = c[1] + Math.sin(a) * d, r0 = 3.5 + rnd() * 5;
+      cg.strokeStyle = rnd() < 0.6 ? `rgba(${S.hairHi},${0.15 + rnd() * 0.25})` : 'rgba(0,0,0,0.4)';
+      cg.lineWidth = 1.2 + rnd() * 1.3;
+      cg.beginPath();
+      cg.arc(x, y, r0, rnd() * TAU, rnd() * TAU + 2.6);
+      cg.stroke();
+    }
+    cg.restore();
+    stamp(gh, cc);
   }
 
-  // ---- Dona Cida
+  // ---- Dona Cida: cabelo grisalho repartido ao meio com coque, xale de tricô, mãos com o terço
   function drawCida(gb, gd, gh, S, E, rnd) {
     const { cx, cy, rx, ry } = S.head;
-    // coque baixo (aparece de lado, atrás da cabeça)
     gb.fillStyle = S.hair;
-    ell(gb, cx + rx * 0.82, cy + ry * 0.32, 34, 30, 0.3);
+    ell(gb, cx, cy - ry * 0.12, rx + 8, ry * 0.95);
     gb.fill();
-    gb.strokeStyle = `rgba(${S.hairHi},0.3)`;
+    ell(gb, cx + rx * 0.86, cy + ry * 0.5, 26, 23, 0.3);
+    gb.fill();
+    gb.strokeStyle = `rgba(${S.hairHi},0.25)`;
     gb.lineWidth = 1.5;
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 12; i++) {
       gb.beginPath();
-      gb.arc(cx + rx * 0.82, cy + ry * 0.32, 8 + i * 1.8, rnd() * TAU, rnd() * TAU + 2);
+      gb.arc(cx + rx * 0.86, cy + ry * 0.5, 6 + i * 1.6, rnd() * TAU, rnd() * TAU + 2);
       gb.stroke();
     }
-    // corpo
     gd.fillStyle = S.skin;
     gd.fill(neckPath(S, 340, 470));
-    soft(gd, 300, 400, 60, 'rgba(20,10,6,0.6)', 0.5);
+    soft(gd, 300, 404, 62, 'rgba(20,10,6,0.6)', 0.5);
     gd.strokeStyle = 'rgba(40,20,14,0.3)';
     gd.lineWidth = 1.5;
-    for (let i = 0; i < 4; i++) { gd.beginPath(); gd.moveTo(278, 418 + i * 12); gd.quadraticCurveTo(300, 424 + i * 12, 322, 418 + i * 12); gd.stroke(); }
+    for (let i = 0; i < 3; i++) { gd.beginPath(); gd.moveTo(280, 414 + i * 11); gd.quadraticCurveTo(300, 420 + i * 11, 320, 414 + i * 11); gd.stroke(); }
     const torso = torsoPath(S);
     gd.fillStyle = S.cloth;
     gd.fill(torso);
@@ -3163,37 +3292,39 @@
     for (let i = 0; i < 70; i++) {
       const x = 150 + rnd() * 300, y = 440 + rnd() * 460;
       const c = rnd() < 0.5 ? '200,140,150' : '220,215,200';
-      for (let p = 0; p < 5; p++) { gd.fillStyle = `rgba(${c},0.3)`; ell(gd, x + Math.cos(p * 1.256) * 4, y + Math.sin(p * 1.256) * 4, 3, 2, p); gd.fill(); }
+      for (let q = 0; q < 5; q++) { gd.fillStyle = `rgba(${c},0.28)`; ell(gd, x + Math.cos(q * 1.256) * 4, y + Math.sin(q * 1.256) * 4, 3, 2, q); gd.fill(); }
     }
     gd.restore();
     gd.fillStyle = '#9a95a0';
-    for (const s of [-1, 1]) { gd.beginPath(); gd.ellipse(300 + s * 26, 448, 30, 16, s * 0.3, 0, TAU); gd.fill(); }
-    // xale de tricô
-    const shawl = (s) => {
+    for (const k of [-1, 1]) { gd.beginPath(); gd.ellipse(300 + k * 24, 450, 28, 14, k * 0.3, 0, TAU); gd.fill(); }
+    const shawl = (k) => {
+      const s = S.sw, sy = S.shY;
       const p = new Path2D();
-      p.moveTo(cx + s * 32, 436);
-      p.bezierCurveTo(cx + s * 84, 444, cx + s * 150, 456, cx + s * 182, 500);
-      p.bezierCurveTo(cx + s * 214, 560, cx + s * 210, 700, cx + s * 204, 920);
-      p.lineTo(cx + s * 70, 920);
-      p.bezierCurveTo(cx + s * 70, 760, cx + s * 52, 600, cx + s * 48, 520);
-      p.bezierCurveTo(cx + s * 46, 480, cx + s * 40, 460, cx + s * 32, 436);
+      p.moveTo(cx + k * 30, 430);
+      p.bezierCurveTo(cx + k * 70, sy - 30, cx + k * (s - 30), sy - 26, cx + k * (s + 6), sy + 4);
+      p.bezierCurveTo(cx + k * (s + 26), sy + 40, cx + k * (s + 24), sy + 160, cx + k * (s + 16), 920);
+      p.lineTo(cx + k * 64, 920);
+      p.bezierCurveTo(cx + k * 64, 760, cx + k * 50, 600, cx + k * 46, 520);
+      p.bezierCurveTo(cx + k * 44, 480, cx + k * 38, 456, cx + k * 30, 430);
       p.closePath();
       return p;
     };
-    for (const s of [-1, 1]) {
-      const p = shawl(s);
+    for (const k of [-1, 1]) {
+      const p = shawl(k);
       gd.fillStyle = S.shawl;
       gd.fill(p);
       gd.save();
       gd.clip(p);
-      gd.strokeStyle = 'rgba(160,130,130,0.22)';
+      armLines(gd, S, 'rgba(10,6,8,0.4)');
+      gd.strokeStyle = 'rgba(160,130,130,0.2)';
       gd.lineWidth = 1.6;
-      for (let y = 440; y < 920; y += 9) {
-        for (let x = cx + s * 30; s > 0 ? x < cx + 220 : x > cx - 220; x += s * 9) {
+      for (let y = 430; y < 920; y += 9) {
+        for (let x = cx + k * 26; k > 0 ? x < cx + 200 : x > cx - 200; x += k * 9) {
+          const yy = y + Math.sin(x * 0.02) * 6 + Math.abs(x - cx) * 0.12;
           gd.beginPath();
-          gd.moveTo(x - 3, y + Math.sin(x * 0.02) * 6);
-          gd.lineTo(x, y + 4 + Math.sin(x * 0.02) * 6);
-          gd.lineTo(x + 3, y + Math.sin(x * 0.02) * 6);
+          gd.moveTo(x - 3, yy);
+          gd.lineTo(x, yy + 4);
+          gd.lineTo(x + 3, yy);
           gd.stroke();
         }
       }
@@ -3201,80 +3332,100 @@
       gd.strokeStyle = '#4c3c3e';
       gd.lineWidth = 9;
       gd.beginPath();
-      gd.moveTo(cx + s * 34, 440);
-      gd.bezierCurveTo(cx + s * 44, 470, cx + s * 50, 600, cx + s * 70, 920);
+      gd.moveTo(cx + k * 32, 436);
+      gd.bezierCurveTo(cx + k * 42, 470, cx + k * 48, 600, cx + k * 64, 920);
       gd.stroke();
+      gd.strokeStyle = 'rgba(60,46,48,0.8)';
+      gd.lineWidth = 2;
+      for (let y = 600; y < 900; y += 7) line(gd, cx + k * (54 + (y - 600) * 0.03), y, cx + k * (48 + (y - 600) * 0.03), y + 12);
     }
-    // mãos e terço
-    gd.fillStyle = S.skin;
-    ell(gd, 278, 800, 46, 30, 0.35);
+    // mãos entrelaçadas
+    const skin = S.skin;
+    gd.fillStyle = skin;
+    ell(gd, 326, 806, 42, 26, -0.25);
     gd.fill();
-    ell(gd, 322, 812, 46, 30, -0.4);
+    ell(gd, 268, 798, 36, 25, 0.35);
     gd.fill();
-    gd.strokeStyle = 'rgba(40,20,14,0.4)';
-    gd.lineWidth = 2;
-    for (let i = 0; i < 4; i++) { line(gd, 296 + i * 10, 790 + i * 3, 312 + i * 12, 830 + i * 2); }
+    for (let f = 0; f < 4; f++) {
+      gd.save();
+      gd.translate(286 + f * 13, 792 + f * 5);
+      gd.rotate(0.55);
+      gd.fillStyle = skin;
+      rrect(gd, -7, -4, 14, 44, 7);
+      gd.fill();
+      gd.strokeStyle = 'rgba(40,20,14,0.45)';
+      gd.lineWidth = 1.5;
+      gd.stroke();
+      gd.restore();
+    }
+    gd.save();
+    gd.translate(300, 772);
+    gd.rotate(-0.3);
+    gd.fillStyle = skin;
+    ell(gd, 0, 0, 20, 8);
+    gd.fill();
+    gd.restore();
+    for (let f = 0; f < 4; f++) soft(gd, 290 + f * 13, 800 + f * 5, 6, 'rgba(255,220,190,0.3)');
     gd.fillStyle = '#4a2c18';
-    for (let i = 0; i < 26; i++) {
-      const u = i / 25, a = Math.PI * (0.05 + u * 0.9);
-      ell(gd, 300 - Math.cos(a) * 70, 800 + Math.sin(a) * 70, 4.4, 4.4);
+    for (let i = 0; i < 24; i++) {
+      const u = i / 23, a = Math.PI * (0.1 + u * 0.8);
+      const bx = 300 - Math.cos(a) * 52, by = 822 + Math.sin(a) * 48;
+      gd.fillStyle = '#4a2c18';
+      ell(gd, bx, by, 4.2, 4.2);
       gd.fill();
       gd.fillStyle = 'rgba(255,220,170,0.4)';
-      ell(gd, 299 - Math.cos(a) * 70, 798 + Math.sin(a) * 70, 1.2, 1.2);
+      ell(gd, bx - 1, by - 1.5, 1.2, 1.2);
       gd.fill();
-      gd.fillStyle = '#4a2c18';
     }
     gd.fillStyle = '#b8903e';
-    gd.fillRect(298, 868, 4, 24);
-    gd.fillRect(290, 874, 20, 4);
-    // rosto com rugas
+    gd.fillRect(298, 872, 4, 26);
+    gd.fillRect(290, 879, 20, 4);
     gh.fillStyle = S.skin;
     gh.fill(facePath(S.head));
     faceFeatures(gh, S, E, rnd, {
       extra(g) {
-        g.strokeStyle = 'rgba(40,18,12,0.28)';
+        g.strokeStyle = 'rgba(40,18,12,0.26)';
         g.lineWidth = 1.6;
-        for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(cx - rx * 0.45, cy - ry * (0.42 - i * 0.07)); g.quadraticCurveTo(cx, cy - ry * (0.46 - i * 0.07), cx + rx * 0.45, cy - ry * (0.42 - i * 0.07)); g.stroke(); }
-        for (const s of [-1, 1]) {
+        for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(cx - rx * 0.42, cy - ry * (0.4 - i * 0.07)); g.quadraticCurveTo(cx, cy - ry * (0.44 - i * 0.07), cx + rx * 0.42, cy - ry * (0.4 - i * 0.07)); g.stroke(); }
+        for (const k of [-1, 1]) {
           g.beginPath();
-          g.moveTo(cx + s * rx * 0.18, cy + ry * 0.36);
-          g.quadraticCurveTo(cx + s * rx * 0.36, cy + ry * 0.5, cx + s * rx * 0.3, cy + ry * 0.72);
+          g.moveTo(cx + k * rx * 0.18, cy + ry * 0.36);
+          g.quadraticCurveTo(cx + k * rx * 0.36, cy + ry * 0.5, cx + k * rx * 0.3, cy + ry * 0.72);
           g.stroke();
-          for (let k = 0; k < 3; k++) line(g, cx + s * rx * 0.58, cy - ry * 0.04 + k * 5, cx + s * rx * 0.72, cy - ry * 0.08 + k * 8);
+          for (let q = 0; q < 3; q++) line(g, cx + k * rx * 0.58, cy - ry * 0.04 + q * 5, cx + k * rx * 0.72, cy - ry * 0.08 + q * 8);
         }
       },
     });
-    const front = mk(gh.canvas.width, gh.canvas.height), fg = front.getContext('2d');
-    fg.setTransform(gh.getTransform());
+    const [cc, cg] = sub(gh);
     const cap = new Path2D();
-    cap.moveTo(cx - rx - 6, cy + ry * 0.1);
-    cap.bezierCurveTo(cx - rx - 12, cy - ry * 0.8, cx - rx * 0.4, cy - ry - 18, cx, cy - ry - 14);
-    cap.bezierCurveTo(cx + rx * 0.5, cy - ry - 16, cx + rx + 14, cy - ry * 0.7, cx + rx + 8, cy + ry * 0.2);
-    cap.lineTo(cx + rx * 0.9, cy + ry * 0.2);
-    cap.lineTo(cx - rx * 0.9, cy + ry * 0.2);
+    cap.moveTo(cx - rx - 4, cy + ry * 0.3);
+    cap.bezierCurveTo(cx - rx - 14, cy - ry * 0.7, cx - rx * 0.5, cy - ry - 14, cx, cy - ry - 10);
+    cap.bezierCurveTo(cx + rx * 0.5, cy - ry - 14, cx + rx + 14, cy - ry * 0.7, cx + rx + 4, cy + ry * 0.3);
     cap.closePath();
-    fg.fillStyle = S.hair;
-    fg.fill(cap);
-    fg.save();
-    fg.clip(cap);
-    strands(fg, rnd, 120, (r) => [cx - 4 + r() * 8, cy - ry - 8], (r) => { const s = r() < 0.5 ? -1 : 1; return [cx + s * (rx + 6), cy + r() * ry * 0.3]; },
-      (r) => `rgba(${S.hairHi},${0.12 + r() * 0.22})`, [1, 2]);
-    fg.restore();
+    cg.fillStyle = S.hair;
+    cg.fill(cap);
+    for (const k of [-1, 1]) { ell(cg, cx + k * (rx + 2), cy - ry * 0.18, 18, 34, k * 0.15); cg.fill(); }
     const win = new Path2D();
-    win.moveTo(cx - rx * 0.9, 920);
-    win.lineTo(cx - rx * 0.9, cy);
-    win.bezierCurveTo(cx - rx * 0.9, cy - ry * 0.4, cx - rx * 0.6, cy - ry * 0.62, cx, cy - ry * 0.6);
-    win.bezierCurveTo(cx + rx * 0.6, cy - ry * 0.62, cx + rx * 0.9, cy - ry * 0.4, cx + rx * 0.9, cy);
-    win.lineTo(cx + rx * 0.9, 920);
+    win.moveTo(cx - rx * 0.88, cy + ry * 1.2);
+    win.lineTo(cx - rx * 0.86, cy + ry * 0.05);
+    win.bezierCurveTo(cx - rx * 0.86, cy - ry * 0.4, cx - rx * 0.5, cy - ry * 0.64, cx - rx * 0.04, cy - ry * 0.6);
+    win.lineTo(cx, cy - ry * 0.66);
+    win.lineTo(cx + rx * 0.04, cy - ry * 0.6);
+    win.bezierCurveTo(cx + rx * 0.5, cy - ry * 0.64, cx + rx * 0.86, cy - ry * 0.4, cx + rx * 0.86, cy + ry * 0.05);
+    win.lineTo(cx + rx * 0.88, cy + ry * 1.2);
     win.closePath();
-    fg.save();
-    fg.globalCompositeOperation = 'destination-out';
-    fg.fill(win);
-    fg.restore();
-    gh.save();
-    gh.setTransform(1, 0, 0, 1, 0, 0);
-    gh.drawImage(front, 0, 0);
-    gh.restore();
+    cutOut(cg, win);
+    cg.save();
+    cg.globalCompositeOperation = 'source-atop';
+    for (const k of [-1, 1]) {
+      strands(cg, rnd, 70, (r) => [cx + k * r() * 3, lerp(cy - ry - 8, cy - ry * 0.64, r())], (r) => [cx + k * (rx + 8), cy - ry * 0.15 + r() * ry * 0.5],
+        (r) => `rgba(${S.hairHi},${0.06 + r() * 0.16})`, [1, 2], 22);
+    }
+    cg.strokeStyle = 'rgba(30,24,22,0.5)';
+    cg.lineWidth = 2;
+    line(cg, cx, cy - ry - 4, cx, cy - ry * 0.66);
+    cg.restore();
+    stamp(gh, cc);
   }
 
   // ---- Rosa (só aparece no retrato de 1974): tranças, chapéu de palha e sardas pintadas
@@ -3293,6 +3444,7 @@
     gd.clip(torso);
     gd.fillStyle = 'rgba(40,30,30,0.35)';
     for (let y = 440; y < 920; y += 22) for (let x = 100; x < 520; x += 22) if (((x + y) / 22) % 2 < 1) gd.fillRect(x, y, 11, 11);
+    armLines(gd, S, 'rgba(40,30,25,0.35)');
     gd.fillStyle = 'rgba(240,235,225,0.75)';
     for (let x = 200; x < 400; x += 12) { ell(gd, x, 462 + Math.abs(x - 300) * 0.2, 7, 5); gd.fill(); }
     gd.restore();
@@ -3301,31 +3453,16 @@
     faceFeatures(gh, S, E, rnd, {
       extra(g) {
         g.fillStyle = 'rgba(60,30,20,0.55)';
-        for (const s of [-1, 1]) for (let i = 0; i < 7; i++) { ell(g, cx + s * rx * (0.3 + rnd() * 0.3), cy + ry * (0.18 + rnd() * 0.16), 1.5, 1.5); g.fill(); }
+        for (const k of [-1, 1]) for (let i = 0; i < 7; i++) { ell(g, cx + k * rx * (0.3 + rnd() * 0.3), cy + ry * (0.18 + rnd() * 0.16), 1.5, 1.5); g.fill(); }
       },
     });
-    const front = mk(gh.canvas.width, gh.canvas.height), fg = front.getContext('2d');
-    fg.setTransform(gh.getTransform());
-    fg.fillStyle = S.hair;
+    const [cc, cg] = sub(gh);
+    cg.fillStyle = S.hair;
     const cap = new Path2D();
     cap.moveTo(cx - rx - 8, cy + ry * 0.3);
     cap.bezierCurveTo(cx - rx - 10, cy - ry, cx + rx + 10, cy - ry, cx + rx + 8, cy + ry * 0.3);
     cap.closePath();
-    fg.fill(cap);
-    for (const s of [-1, 1]) {
-      for (let k = 0; k < 11; k++) {
-        const y = cy + ry * 0.3 + k * 26, x = cx + s * (rx + 2 + k * 2.6);
-        fg.fillStyle = S.hair;
-        ell(fg, x, y, 15 - k * 0.5, 16, s * (k % 2 ? 0.4 : -0.4));
-        fg.fill();
-        fg.strokeStyle = `rgba(${S.hairHi},0.3)`;
-        fg.lineWidth = 1.5;
-        fg.stroke();
-      }
-      fg.fillStyle = '#c0392b';
-      ell(fg, cx + s * (rx + 32), cy + ry * 0.3 + 11 * 26, 12, 6);
-      fg.fill();
-    }
+    cg.fill(cap);
     const win = new Path2D();
     win.moveTo(cx - rx * 0.88, cy + ry * 1.5);
     win.lineTo(cx - rx * 0.88, cy);
@@ -3333,86 +3470,120 @@
     win.bezierCurveTo(cx + rx * 0.5, cy - ry * 0.6, cx + rx * 0.88, cy - ry * 0.5, cx + rx * 0.88, cy);
     win.lineTo(cx + rx * 0.88, cy + ry * 1.5);
     win.closePath();
-    fg.save();
-    fg.globalCompositeOperation = 'destination-out';
-    fg.fill(win);
-    fg.restore();
-    // chapéu de palha
-    fg.fillStyle = '#c9b07a';
-    ell(fg, cx, cy - ry * 0.72, rx * 2.1, 26, -0.04);
-    fg.fill();
-    fg.beginPath();
-    fg.moveTo(cx - rx * 0.9, cy - ry * 0.72);
-    fg.bezierCurveTo(cx - rx * 0.9, cy - ry * 1.6, cx + rx * 0.9, cy - ry * 1.6, cx + rx * 0.9, cy - ry * 0.72);
-    fg.closePath();
-    fg.fill();
-    fg.strokeStyle = 'rgba(90,70,30,0.5)';
-    fg.lineWidth = 1.5;
-    for (let i = 0; i < 9; i++) { fg.beginPath(); fg.ellipse(cx, cy - ry * 0.72, rx * (0.95 + i * 0.13), 8 + i * 2, -0.04, Math.PI * 0.05, Math.PI * 0.95); fg.stroke(); }
-    fg.fillStyle = '#7a2a20';
-    fg.fillRect(cx - rx * 0.9, cy - ry * 0.86, rx * 1.8, 12);
-    gh.save();
-    gh.setTransform(1, 0, 0, 1, 0, 0);
-    gh.drawImage(front, 0, 0);
-    gh.restore();
+    cutOut(cg, win);
+    for (const k of [-1, 1]) {
+      for (let q = 0; q < 10; q++) {
+        const y = cy + ry * 0.3 + q * 26, x = cx + k * (rx + 2 + q * 1.5);
+        cg.fillStyle = S.hair;
+        ell(cg, x, y, 15 - q * 0.5, 16, k * (q % 2 ? 0.4 : -0.4));
+        cg.fill();
+        cg.strokeStyle = `rgba(${S.hairHi},0.3)`;
+        cg.lineWidth = 1.5;
+        cg.stroke();
+      }
+      cg.fillStyle = '#c0392b';
+      ell(cg, cx + k * (rx + 18), cy + ry * 0.3 + 10 * 26, 12, 6);
+      cg.fill();
+    }
+    cg.fillStyle = '#c9b07a';
+    ell(cg, cx, cy - ry * 0.72, rx * 2.1, 26, -0.04);
+    cg.fill();
+    cg.beginPath();
+    cg.moveTo(cx - rx * 0.9, cy - ry * 0.72);
+    cg.bezierCurveTo(cx - rx * 0.9, cy - ry * 1.6, cx + rx * 0.9, cy - ry * 1.6, cx + rx * 0.9, cy - ry * 0.72);
+    cg.closePath();
+    cg.fill();
+    cg.strokeStyle = 'rgba(90,70,30,0.5)';
+    cg.lineWidth = 1.5;
+    for (let i = 0; i < 9; i++) { cg.beginPath(); cg.ellipse(cx, cy - ry * 0.72, rx * (0.95 + i * 0.13), 8 + i * 2, -0.04, Math.PI * 0.05, Math.PI * 0.95); cg.stroke(); }
+    cg.fillStyle = '#7a2a20';
+    cg.fillRect(cx - rx * 0.9, cy - ry * 0.86, rx * 1.8, 12);
+    stamp(gh, cc);
   }
 
   const CHARS = {
-    helena: { head: { cx: 300, cy: 282, rx: 70, ry: 94, jaw: 0.4 }, neckW: 29, sw: 160, skin: '#b88f72', hair: '#1c1310', hairHi: '160,115,80', cloth: '#cbb998', lip: '150,60,55', draw: drawHelena, brushAng: Math.PI / 2 },
-    heitor: { head: { cx: 300, cy: 280, rx: 76, ry: 98, jaw: 0.56 }, neckW: 38, sw: 192, skin: '#ab8367', hair: '#17100d', hairHi: '150,105,70', cloth: '#c9c3b6', vest: '#3b2b21', browW: 4.2, browA: 0.7, mouthW: 0.27, lip: '120,60,50', draw: drawHeitor, brushAng: Math.PI / 2 },
-    cida: { head: { cx: 300, cy: 300, rx: 68, ry: 88, jaw: 0.5 }, neckW: 30, sw: 172, shY: 480, skin: '#a27e68', hair: '#908a85', hairHi: '235,230,225', cloth: '#2c2a38', shawl: '#3d3337', lip: '120,70,65', draw: drawCida, brushAng: Math.PI / 2 },
-    rosa: { head: { cx: 300, cy: 290, rx: 64, ry: 86, jaw: 0.42 }, neckW: 27, sw: 150, skin: '#c09276', hair: '#2a1d16', hairHi: '170,125,90', cloth: '#b9a98c', lip: '150,60,55', draw: drawRosa, brushAng: Math.PI / 2 },
+    helena: { head: { cx: 300, cy: 282, rx: 70, ry: 94, jaw: 0.4 }, neckW: 29, sw: 150, shY: 468, skin: '#b88f72', hair: '#1c1310', hairHi: '160,115,80', cloth: '#c7b593', lip: '150,60,55', draw: drawHelena },
+    heitor: { head: { cx: 300, cy: 280, rx: 75, ry: 98, jaw: 0.62 }, neckW: 40, sw: 182, shY: 458, skin: '#ab8367', hair: '#17100d', hairHi: '150,105,70', cloth: '#c4beb1', vest: '#3b2b21', browW: 4.2, browA: 0.7, mouthW: 0.27, lip: '120,60,50', draw: drawHeitor },
+    cida: { head: { cx: 300, cy: 300, rx: 68, ry: 88, jaw: 0.5 }, neckW: 34, sw: 160, shY: 468, skin: '#a27e68', hair: '#6c6763', hairHi: '205,200,195', cloth: '#2c2a38', shawl: '#3d3337', lip: '120,70,65', draw: drawCida },
+    rosa: { head: { cx: 300, cy: 290, rx: 64, ry: 86, jaw: 0.42 }, neckW: 27, sw: 140, shY: 466, skin: '#c09276', hair: '#2a1d16', hairHi: '170,125,90', cloth: '#b9a98c', lip: '150,60,55', draw: drawRosa },
   };
   const EXPR = {
     neutro: { rot: 0, dy: 0, warm: '255,176,104', cool: '120,150,215', wA: 0.95, cA: 0.7, mouth: 0, brow: null },
     sorriso: { rot: -0.03, dy: -6, warm: '255,192,120', cool: '130,160,220', wA: 1.15, cA: 0.55, tint: '255,170,110,0.08', mouth: 1, brow: 'alegre' },
     triste: { rot: 0.07, dy: 10, warm: '225,160,115', cool: '120,160,235', wA: 0.55, cA: 1, tint: '60,90,150,0.16', mouth: -0.8, brow: 'triste', tear: true },
     medo: { rot: 0.0, dy: 3, warm: '215,170,135', cool: '150,185,245', wA: 0.6, cA: 1.15, tint: '80,110,170,0.2', mouth: -0.5, brow: 'medo', wide: true, tremble: true },
-    sombrio: { rot: -0.02, dy: 0, warm: '200,30,40', cool: '190,235,205', wA: 1.1, cA: 0.85, tint: '20,0,10,0.38', mouth: -0.2, brow: 'raiva', eyes: true, smoke: true },
+    sombrio: { rot: -0.02, dy: 0, warm: '200,30,40', cool: '190,235,205', wA: 1.1, cA: 0.85, tint: '20,0,10,0.4', mouth: -0.2, brow: 'raiva', eyes: true, smoke: true },
   };
 
-  function rim(c, res, rgb, dx, alpha, haloA) {
-    const w = c.width, h = c.height;
+  // sombreamento em claro-escuro: luz quente à esquerda, sombra à direita e embaixo
+  function shadeLayer(c, res, E) {
+    const g = c.getContext('2d');
+    g.save();
+    g.setTransform(res, 0, 0, res, 0, 0);
+    g.globalCompositeOperation = 'source-atop';
+    g.fillStyle = lin(g, 170, 0, 470, 0, [[0, 'rgba(0,0,0,0)'], [0.45, 'rgba(0,0,0,0.32)'], [1, 'rgba(0,0,0,0.8)']]);
+    g.fillRect(0, 0, CW, CH);
+    g.fillStyle = lin(g, 0, 470, 0, 900, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.7)']]);
+    g.fillRect(0, 0, CW, CH);
+    let rg = g.createRadialGradient(190, 300, 0, 190, 300, 330);
+    rg.addColorStop(0, `rgba(${E.warm},${0.2 * E.wA})`);
+    rg.addColorStop(1, `rgba(${E.warm},0)`);
+    g.fillStyle = rg;
+    g.fillRect(0, 0, CW, CH);
+    rg = g.createRadialGradient(480, 420, 0, 480, 420, 280);
+    rg.addColorStop(0, `rgba(${E.cool},${0.1 * E.cA})`);
+    rg.addColorStop(1, `rgba(${E.cool},0)`);
+    g.fillStyle = rg;
+    g.fillRect(0, 0, CW, CH);
+    if (E.tint) { g.fillStyle = `rgba(${E.tint})`; g.fillRect(0, 0, CW, CH); }
+    g.restore();
+  }
+  // crescente de luz numa borda da silhueta (desloca a silhueta e subtrai)
+  function crescent(comp, res, rgb, dx) {
+    const w = comp.width, h = comp.height;
     const t = mk(w, h), tg = t.getContext('2d');
-    tg.drawImage(c, 0, 0);
+    tg.drawImage(comp, 0, 0);
     tg.globalCompositeOperation = 'source-in';
     tg.fillStyle = `rgb(${rgb})`;
     tg.fillRect(0, 0, w, h);
     tg.globalCompositeOperation = 'destination-out';
-    tg.drawImage(c, dx * res, -Math.abs(dx) * 0.35 * res);
-    const b = softBlur(t, 2.2 * res);
+    tg.drawImage(comp, dx * res, -Math.abs(dx) * 0.4 * res);
+    return t;
+  }
+  function paintAtop(c, src, alpha) {
     const g = c.getContext('2d');
     g.save();
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalCompositeOperation = 'source-atop';
     g.globalAlpha = Math.min(1, alpha);
-    g.drawImage(b, 0, 0);
-    if (haloA) {
-      g.globalCompositeOperation = 'destination-over';
-      g.globalAlpha = haloA;
-      g.drawImage(softBlur(t, 9 * res), 0, 0);
-    }
+    g.drawImage(src, 0, 0);
     g.restore();
   }
-  function finishLayer(c, res, E) {
-    const g = c.getContext('2d');
-    const w = c.width, h = c.height;
-    g.save();
-    g.setTransform(1, 0, 0, 1, 0, 0);
-    g.globalCompositeOperation = 'source-atop';
-    g.fillStyle = lin(g, 0.18 * w, 0, 0.9 * w, 0, [[0, 'rgba(0,0,0,0)'], [0.5, 'rgba(0,0,0,0.4)'], [1, 'rgba(0,0,0,0.8)']]);
-    g.fillRect(0, 0, w, h);
-    g.fillStyle = lin(g, 0, 0.42 * h, 0, h, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.62)']]);
-    g.fillRect(0, 0, w, h);
-    const rg = g.createRadialGradient(0.22 * w, 0.3 * h, 0, 0.22 * w, 0.3 * h, 0.62 * w);
-    rg.addColorStop(0, `rgba(${E.warm},${0.16 * E.wA})`);
-    rg.addColorStop(1, `rgba(${E.warm},0)`);
-    g.fillStyle = rg;
-    g.fillRect(0, 0, w, h);
-    if (E.tint) { g.fillStyle = `rgba(${E.tint})`; g.fillRect(0, 0, w, h); }
-    g.restore();
-    rim(c, res, E.warm, 9, 0.9 * E.wA, 0.28 * E.wA);
-    rim(c, res, E.cool, -6, 0.62 * E.cA, 0.18 * E.cA);
+  // recorta a camada ao retângulo com conteúdo (menos pixels por quadro)
+  function crop(c, res) {
+    const g = c.getContext('2d'), w = c.width, h = c.height;
+    const d = g.getImageData(0, 0, w, h).data;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y += 2) {
+      for (let x = 0; x < w; x += 2) {
+        if (d[(y * w + x) * 4 + 3] > 3) {
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+          if (y < y0) y0 = y;
+          if (y > y1) y1 = y;
+        }
+      }
+    }
+    if (x1 < 0) return { c: mk(1, 1), x: 0, y: 0, w: 0.01, h: 0.01 };
+    x0 = Math.max(0, x0 - 2); y0 = Math.max(0, y0 - 2); x1 = Math.min(w - 1, x1 + 2); y1 = Math.min(h - 1, y1 + 2);
+    const o = mk(x1 - x0 + 1, y1 - y0 + 1);
+    o.getContext('2d').drawImage(c, -x0, -y0);
+    return { c: o, x: x0 / res, y: y0 / res, w: o.width / res, h: o.height / res };
+  }
+  function composeFull(layers, w, h) {
+    const c = mk(w, h), g = c.getContext('2d');
+    for (const l of layers) g.drawImage(l, 0, 0);
+    return c;
   }
 
   const charMemo = new Map();
@@ -3420,43 +3591,60 @@
     const key = nome + '|' + expr + '|' + res;
     if (charMemo.has(key)) { const v = charMemo.get(key); charMemo.delete(key); charMemo.set(key, v); return v; }
     const S = CHARS[nome], E = EXPR[expr];
-    const L = { back: mk(CW * res, CH * res), body: mk(CW * res, CH * res), head: mk(CW * res, CH * res), res, edges: [] };
-    const gb = L.back.getContext('2d'), gd = L.body.getContext('2d'), gh = L.head.getContext('2d');
-    for (const g of [gb, gd, gh]) g.scale(res, res);
+    const mkL = () => { const c = mk(CW * res, CH * res), g = c.getContext('2d'); g.scale(res, res); return [c, g]; };
+    const [back, gb] = mkL(), [body, gd] = mkL(), [head, gh] = mkL();
     S.draw(gb, gd, gh, S, E, mulberry32(hashStr('pers:' + nome)));
     const br = mulberry32(hashStr('pincel:' + nome + expr));
-    for (const c of [L.back, L.body, L.head]) {
-      brushPass(c, br, { r: res, n: 26000, len: [4, 12], width: [1.5, 3.5], alpha: 0.28, ang: S.brushAng, spread: 0.8, smear: 5, atop: true, vary: 0.1 });
-      finishLayer(c, res, E);
+    for (const c of [back, body, head]) {
+      brushPass(c, br, { r: res, n: 30000, len: [3, 8], width: [1.5, 3.5], alpha: 0.26, ang: 0, spread: TAU, smear: 4, atop: true, vary: 0.12 });
+      shadeLayer(c, res, E);
     }
+    // luz de contorno calculada na silhueta inteira (sem riscos nas bordas internas)
+    const comp = composeFull([back, body, head], back.width, back.height);
+    const warm = crescent(comp, res, E.warm, 6), cool = crescent(comp, res, E.cool, -4);
+    const warmS = softBlur(warm, 1.6 * res), coolS = softBlur(cool, 1.6 * res);
+    for (const c of [back, body, head]) { paintAtop(c, warmS, 0.9 * E.wA); paintAtop(c, coolS, 0.6 * E.cA); }
+    const bgd = body.getContext('2d');
+    bgd.save();
+    bgd.globalCompositeOperation = 'destination-over';
+    bgd.globalAlpha = 0.3 * E.wA;
+    bgd.drawImage(softBlur(warm, 10 * res), 0, 0);
+    bgd.globalAlpha = 0.2 * E.cA;
+    bgd.drawImage(softBlur(cool, 10 * res), 0, 0);
+    bgd.restore();
+    const L = { res, edges: [] };
     if (E.smoke) {
       const rnd = mulberry32(99);
-      for (const c of [L.body, L.back]) {
+      for (const c of [body, back]) {
         const g = c.getContext('2d');
         g.save();
         g.globalCompositeOperation = 'destination-out';
         for (let i = 0; i < 80; i++) soft(g, 80 + rnd() * 440, 700 + rnd() * 220, 20 + rnd() * 40, `rgba(0,0,0,${0.3 + rnd() * 0.4})`);
         g.restore();
       }
-      const all = composeChar(L);
+      const all = composeFull([back, body, head], back.width, back.height);
       const data = all.getContext('2d').getImageData(0, 0, all.width, all.height).data;
       const aw = all.width, ah = all.height;
       const A = (x, y) => { const ix = Math.round(x * res), iy = Math.round(y * res); return ix < 0 || iy < 0 || ix >= aw || iy >= ah ? 0 : data[(iy * aw + ix) * 4 + 3]; };
-      let guard = 0;
-      while (L.edges.length < 46 && guard++ < 6000) {
+      for (let i = 0; i < 6000 && L.edges.length < 46; i++) {
         const x = 60 + rnd() * 480, y = 150 + rnd() * 700;
         if (A(x, y) > 120 && (A(x - 16, y) < 20 || A(x + 16, y) < 20 || A(x, y - 16) < 20)) L.edges.push({ x, y, p: rnd(), d: x < 300 ? -1 : 1, s: 0.18 + rnd() * 0.22 });
       }
     }
+    L.back = crop(back, res);
+    L.body = crop(body, res);
+    L.head = crop(head, res);
     charMemo.set(key, L);
     while (charMemo.size > 8) charMemo.delete(charMemo.keys().next().value);
     return L;
   }
+  function drawPart(ctx, p) { ctx.drawImage(p.c, p.x, p.y, p.w, p.h); }
   function composeChar(L) {
-    const c = mk(L.back.width, L.back.height), g = c.getContext('2d');
-    g.drawImage(L.back, 0, 0);
-    g.drawImage(L.body, 0, 0);
-    g.drawImage(L.head, 0, 0);
+    const c = mk(CW * L.res, CH * L.res), g = c.getContext('2d');
+    g.scale(L.res, L.res);
+    drawPart(g, L.back);
+    drawPart(g, L.body);
+    drawPart(g, L.head);
     return c;
   }
   function sepia(c) {
@@ -3475,10 +3663,23 @@
   }
 
   // ======================================================================== API
+  // cena(): desenha o cenário no espaço 1600x900; personagem(): desenha o busto no espaço 600x900.
+  // preparar()/prepararPersonagem(): pintam antes (ex.: durante uma transição) para evitar travadas;
+  // `escala` é a escala que o contexto terá ao desenhar (ctx.getTransform().a).
   window.Pintor = {
     cenas: Object.keys(SCENES),
     personagens: ['helena', 'heitor', 'cida'],
     expressoes: Object.keys(EXPR),
+
+    preparar(nome, opts, escala) {
+      if (SCENES[nome]) getScene(nome, opts || {}, escalaRes(escala));
+    },
+    prepararPersonagem(nome, expr, escala) {
+      if (!CHARS[nome] || nome === 'rosa') return;
+      let e = EXPR[expr] ? expr : 'neutro';
+      if (nome === 'cida' && e !== 'triste' && e !== 'medo') e = 'neutro';
+      buildChar(nome, e, escalaRes(escala));
+    },
 
     cena(nome, ctx, t, opts, cache) {
       opts = opts || {};
@@ -3486,10 +3687,11 @@
       if (!SCENES[nome]) nome = 'preto';
       const S = SCENES[nome];
       const r = resOf(ctx);
-      if (!cache.base || cache.r !== r || cache.nome !== nome) {
-        cache.base = buildScene(nome, opts, r);
+      const key = nome + '|' + JSON.stringify(opts);
+      if (!cache.base || cache.r !== r || cache.key !== key) {
+        cache.base = getScene(nome, opts, r);
         cache.r = r;
-        cache.nome = nome;
+        cache.key = key;
         cache.st = {};
         if (S.prep) S.prep(cache.st, opts, mulberry32(hashStr('anim:' + nome)));
       }
@@ -3521,17 +3723,17 @@
       };
       ctx.save();
       headT();
-      ctx.drawImage(L.back, 0, 0, CW, CH);
+      drawPart(ctx, L.back);
       ctx.restore();
       ctx.save();
       ctx.translate(300, CH);
       ctx.scale(1 + br * 0.002, 1 + br * 0.004);
       ctx.translate(-300, -CH);
-      ctx.drawImage(L.body, 0, 0, CW, CH);
+      drawPart(ctx, L.body);
       ctx.restore();
       ctx.save();
       headT();
-      ctx.drawImage(L.head, 0, 0, CW, CH);
+      drawPart(ctx, L.head);
       const h = CHARS[nome].head, ey = h.cy - h.ry * 0.05, ex = h.rx * 0.38;
       if (E.eyes) {
         const a = 0.75 + 0.25 * fl(t * 2.1);
