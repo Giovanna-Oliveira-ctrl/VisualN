@@ -1,0 +1,9 @@
+Personagens do jogo.
+
+Coloque aqui imagens de personagens em .png com fundo transparente, na proporção 2:3
+(por exemplo 1024x1536), com a figura encostada na borda de baixo.
+Uma imagem por expressão: neutro, sorriso, serio, triste, surpreso, irritado.
+Depois, em js/characters.js, preencha "imagens". Exemplo:
+  imagens: { neutro: 'assets/characters/lucien-neutro.png', sorriso: 'assets/characters/lucien-sorriso.png' }
+
+Expressões sem imagem usam a imagem "neutro"; personagens sem nenhuma imagem usam a arte provisória.

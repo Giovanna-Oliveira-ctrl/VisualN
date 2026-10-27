@@ -1,0 +1,304 @@
+/* =========================================================================
+   ARTE PROVISÓRIA — estilos dos cenários e personagens desenhados em SVG.
+   Todas as classes começam com "arte-" para não se misturar com o resto da interface.
+   ========================================================================= */
+
+.arte-cenario {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+}
+.arte-cenario.arte-com-imagem {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.arte-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ---------- personagens ---------- */
+.arte-personagem {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.arte-personagem svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.arte-personagem-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+}
+.arte-desbotada {
+  filter: sepia(0.45) saturate(0.75) contrast(0.92);
+  opacity: 0.9;
+}
+
+/* ---------- chamas, brilhos e reflexos (dentro do SVG) ---------- */
+.arte-chama {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: arte-chama 1.7s ease-in-out infinite;
+}
+@keyframes arte-chama {
+  0%, 100% { transform: scale(1, 1) skewX(0deg); opacity: 1; }
+  20% { transform: scale(0.92, 1.08) skewX(-3deg); opacity: 0.94; }
+  45% { transform: scale(1.05, 0.94) skewX(2deg); opacity: 1; }
+  70% { transform: scale(0.96, 1.05) skewX(-1deg); opacity: 0.9; }
+}
+.arte-halo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: arte-halo 2.6s ease-in-out infinite;
+}
+@keyframes arte-halo {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  35% { opacity: 0.82; transform: scale(0.96); }
+  60% { opacity: 0.95; transform: scale(1.03); }
+}
+.arte-pulsa {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: arte-pulsa 4.5s ease-in-out infinite;
+}
+@keyframes arte-pulsa {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.72; }
+}
+.arte-pisca-janela { animation: arte-pisca-janela 5s ease-in-out infinite; }
+@keyframes arte-pisca-janela {
+  0%, 100% { opacity: 1; }
+  42% { opacity: 0.86; }
+  48% { opacity: 0.97; }
+  55% { opacity: 0.8; }
+}
+.arte-cintila { animation: arte-cintila 4s ease-in-out infinite; }
+@keyframes arte-cintila {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.15; }
+}
+.arte-reflexo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: arte-reflexo 3.6s ease-in-out infinite;
+}
+@keyframes arte-reflexo {
+  0%, 100% { transform: translateX(0) scaleX(1); }
+  50% { transform: translateX(6px) scaleX(0.82); }
+}
+.arte-nuvens { animation: arte-nuvens 60s ease-in-out infinite alternate; }
+@keyframes arte-nuvens {
+  from { transform: translateX(-30px); }
+  to { transform: translateX(40px); }
+}
+.arte-raio { animation: arte-raio 7s ease-in-out infinite; }
+@keyframes arte-raio {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.arte-fogo {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: arte-fogo 1.2s ease-in-out infinite;
+}
+@keyframes arte-fogo {
+  0%, 100% { transform: scale(1, 1) skewX(0deg); }
+  30% { transform: scale(0.9, 1.12) skewX(-4deg); }
+  65% { transform: scale(1.06, 0.92) skewX(3deg); }
+}
+.arte-ondula { animation: arte-ondula 3.2s ease-in-out infinite; }
+@keyframes arte-ondula {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(7px); }
+}
+.arte-flutua {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: arte-flutua 7s ease-in-out infinite;
+}
+@keyframes arte-flutua {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-14px) rotate(2deg); }
+}
+.arte-fumaca { animation: arte-fumaca 3s ease-in-out infinite; }
+@keyframes arte-fumaca {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.12; }
+}
+.arte-vulto { animation: arte-vulto 6s ease-in-out infinite; }
+@keyframes arte-vulto {
+  0%, 100% { opacity: 0.24; }
+  40% { opacity: 0.08; }
+  46% { opacity: 0.3; }
+  70% { opacity: 0.14; }
+}
+
+/* ---------- personagens: respiração e fantasma ---------- */
+.arte-respira {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: arte-respira 5.5s ease-in-out infinite;
+}
+@keyframes arte-respira {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.004, 1.008); }
+}
+.arte-fantasma { animation: arte-fantasma 7s ease-in-out infinite; }
+@keyframes arte-fantasma {
+  0%, 100% { opacity: 0.92; }
+  38% { opacity: 0.72; }
+  44% { opacity: 0.88; }
+  70% { opacity: 0.66; }
+}
+.arte-particula {
+  transform-box: fill-box;
+  animation: arte-particula 6s linear infinite;
+}
+@keyframes arte-particula {
+  0% { transform: translate(0, 0); opacity: 0; }
+  20% { opacity: 0.6; }
+  100% { transform: translate(var(--dx, 0), -120px); opacity: 0; }
+}
+.arte-reflexo-oculos { animation: arte-pulsa 5s ease-in-out infinite; }
+
+/* ---------- clima (camadas HTML por cima do SVG) ---------- */
+.arte-clima {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.arte-neblina {
+  position: absolute;
+  left: 0;
+  width: 200%;
+  background-image:
+    radial-gradient(ellipse 20% 42% at 24% 58%, rgba(var(--cor), var(--op)), transparent 75%),
+    radial-gradient(ellipse 17% 34% at 49% 38%, rgba(var(--cor), calc(var(--op) * 0.6)), transparent 75%),
+    radial-gradient(ellipse 21% 46% at 72% 62%, rgba(var(--cor), calc(var(--op) * 0.85)), transparent 75%),
+    radial-gradient(ellipse 11% 28% at 90% 44%, rgba(var(--cor), calc(var(--op) * 0.5)), transparent 75%),
+    radial-gradient(ellipse 11% 30% at 9% 46%, rgba(var(--cor), calc(var(--op) * 0.5)), transparent 75%);
+  background-size: 50% 100%;
+  background-repeat: repeat-x;
+  animation: arte-neblina 90s linear infinite;
+}
+@keyframes arte-neblina {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.arte-brasas,
+.arte-brasa {
+  position: absolute;
+}
+.arte-brasas {
+  top: 100%;
+  height: 100%;
+  width: var(--s);
+  animation: arte-sobe 9s linear infinite;
+}
+.arte-brasas::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff1c4 0%, #ffae4a 40%, rgba(255, 90, 30, 0) 72%);
+  box-shadow: 0 0 6px 2px rgba(255, 120, 40, 0.55);
+}
+@keyframes arte-sobe {
+  0% { transform: translate(0, 0); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translate(calc(var(--dx) * 0.6), -55%); }
+  85% { opacity: 0.7; }
+  100% { transform: translate(var(--dx), -112%); opacity: 0; }
+}
+.arte-cinzas {
+  position: absolute;
+  bottom: 100%;
+  height: 100%;
+  width: var(--s);
+  animation: arte-cai 12s linear infinite;
+}
+.arte-cinzas::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: var(--s);
+  height: calc(var(--s) * 0.7);
+  border-radius: 40%;
+  background: rgba(190, 186, 180, 0.55);
+}
+@keyframes arte-cai {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translate(var(--dx), 55%) rotate(120deg); }
+  100% { transform: translate(calc(var(--dx) * -0.4), 112%) rotate(260deg); opacity: 0; }
+}
+.arte-poeira {
+  position: absolute;
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background: rgba(255, 228, 180, 0.7);
+  box-shadow: 0 0 4px rgba(255, 220, 160, 0.5);
+  animation: arte-poeira 14s ease-in-out infinite;
+}
+@keyframes arte-poeira {
+  0%, 100% { transform: translate(0, 0); opacity: 0.15; }
+  30% { opacity: 0.75; }
+  50% { transform: translate(var(--dx), -26px); opacity: 0.5; }
+  75% { opacity: 0.2; }
+}
+.arte-luz-velas {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 55% at var(--x) var(--y), rgba(var(--cor), var(--op)), transparent 70%);
+  mix-blend-mode: screen;
+  animation: arte-luz-velas 3.2s ease-in-out infinite;
+}
+@keyframes arte-luz-velas {
+  0%, 100% { opacity: 1; }
+  30% { opacity: 0.8; }
+  55% { opacity: 0.95; }
+  75% { opacity: 0.85; }
+}
+.arte-vinheta-html {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 50%, rgba(0, 0, 0, var(--op)) 100%);
+}
+
+/* ---------- menos movimento: tudo parado ---------- */
+.reduzir-animacoes [class*="arte-"],
+.reduzir-animacoes [class*="arte-"]::before {
+  animation: none !important;
+}
+.reduzir-animacoes .arte-brasas,
+.reduzir-animacoes .arte-cinzas {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [class*="arte-"],
+  [class*="arte-"]::before {
+    animation: none !important;
+  }
+  .arte-brasas,
+  .arte-cinzas {
+    display: none;
+  }
+}

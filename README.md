@@ -1,4 +1,17 @@
-# Sete Velas
+# VisualN
+
+Visual novels para o navegador, feitas com HTML, CSS e JavaScript.
+
+| Jogo | Pasta | Estado |
+| --- | --- | --- |
+| **Sete Noites de Pecado** (*Seven Nights of Sin*): dark romance, mistério psicológico e dark academia, com cinco interesses românticos | [`sete-noites-de-pecado/`](sete-noites-de-pecado/) | Protótipo: prólogo e Capítulo 1 de 7 |
+| **Sete Velas**: romance com terror num casarão da serra mineira | raiz do repositório (`index.html`) | Completo: 3 noites e 6 finais |
+
+Para jogar, abra o `index.html` da pasta do jogo no navegador. Cada jogo tem o próprio README com instruções.
+
+---
+
+## Sete Velas
 
 Uma visual novel de romance e terror, feita para o navegador.
 
@@ -11,7 +24,7 @@ Uma pessoa herda um casarão numa cidadezinha de neblina na serra mineira. A av�
 - Salvamento automático a cada escolha, 6 espaços para salvar, histórico do texto, modo automático e opção de pular texto.
 - Trilha e efeitos sonoros gerados no próprio navegador, sem arquivos de áudio. Melhor com fones.
 
-## Como jogar
+### Como jogar
 
 Abra o arquivo `index.html` em qualquer navegador moderno (Chrome, Edge, Firefox ou Safari), no computador ou no celular.
 
@@ -19,7 +32,7 @@ Abra o arquivo `index.html` em qualquer navegador moderno (Chrome, Edge, Firefox
 - Números escolhem as opções. `Esc` abre o menu, `H` abre o histórico, `A` liga o modo automático e `Ctrl` segurado pula o texto.
 - Em **Opções** dá para desligar os flashes de luz e o tremor da tela.
 
-## Arte
+### Arte
 
 Nesta primeira versão, cenários e personagens são pintados por código (`js/pintor.js`). Para trocar qualquer cena ou expressão por uma imagem de verdade:
 
@@ -28,7 +41,7 @@ Nesta primeira versão, cenários e personagens são pintados por código (`js/p
 
 O jogo usa a imagem quando ela existe e a pintura por código quando não existe, então dá para trocar aos poucos.
 
-## Onde está cada coisa
+### Onde está cada coisa
 
 | Arquivo | O que tem |
 | --- | --- |
@@ -40,7 +53,7 @@ O jogo usa a imagem quando ela existe e a pintura por código quando não existe
 | `arte/arte.js` | Lista de imagens prontas que substituem a pintura por código. |
 | `scripts/` | Ferramentas de conferência e de publicação (precisam de Node.js e Playwright). |
 
-## Conferir o roteiro depois de editar
+### Conferir o roteiro depois de editar
 
 ```
 node scripts/verificar-roteiro.js   # rótulos, saltos e se todos os finais são alcançáveis

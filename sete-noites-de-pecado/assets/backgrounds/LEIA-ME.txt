@@ -1,0 +1,8 @@
+Cenários (fundos) do jogo.
+
+Coloque aqui imagens de cenário, de preferência 1920x1080, em .jpg ou .webp.
+Depois, em js/scenes.js, preencha o campo "imagem" do cenário correspondente. Exemplo:
+  biblioteca: { nome: 'Biblioteca Histórica', imagem: 'assets/backgrounds/biblioteca.jpg', ... }
+
+Enquanto um cenário não tiver imagem, o jogo usa a arte provisória desenhada por código.
+Use apenas imagens que você criou ou que têm licença para uso no jogo.

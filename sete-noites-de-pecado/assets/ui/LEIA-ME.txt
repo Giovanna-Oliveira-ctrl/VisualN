@@ -1,0 +1,4 @@
+Elementos de interface (molduras, ícones, texturas de papel).
+
+Hoje os ornamentos (rosa negra, máscara, selo de ônix, divisores) são desenhados por código em js/art.js.
+Se quiser usar imagens próprias, coloque-as aqui e use-as em css/style.css.

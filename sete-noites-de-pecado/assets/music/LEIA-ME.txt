@@ -1,0 +1,7 @@
+Músicas do jogo.
+
+Hoje toda a música é sintetizada no navegador (js/audio.js), então esta pasta pode ficar vazia.
+Para usar uma música de verdade, coloque o arquivo .mp3 ou .ogg aqui e escreva o caminho
+em ARQUIVOS_DE_AUDIO, no topo de js/audio.js. Exemplo:
+  musicas: { tema: 'assets/music/tema.mp3' }
+Nomes usados no roteiro: tema, campus, misterio, baile, romance, tensao.

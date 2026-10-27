@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sete Noites de Pecado</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Sete Noites de Pecado (Seven Nights of Sin): visual novel de dark romance e mistério psicológico na cidade de Bellgrave.">
+<meta name="theme-color" content="#0a0708">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400;1,6..96,500&family=Spectral:ital,wght@0,400;0,500;1,400&family=Spectral+SC:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/scenes.css">
+</head>
+<body>
+<main id="palco" aria-label="Sete Noites de Pecado">
+  <!-- Cenário e personagens (desenhados por js/stage.js) -->
+  <div id="fundo" class="camada" aria-hidden="true"></div>
+  <div id="personagens" class="camada" aria-hidden="true"></div>
+  <div id="vinheta" class="camada" aria-hidden="true"></div>
+
+  <!-- Barra do topo durante o jogo -->
+  <header id="barra-jogo" hidden>
+    <p id="rotulo-capitulo"></p>
+    <nav class="acoes-rapidas" aria-label="Ações rápidas">
+      <button type="button" class="so-largo" data-acao="historico">Histórico</button>
+      <button type="button" class="so-largo" data-acao="salvar">Salvar</button>
+      <button type="button" data-acao="auto" aria-pressed="false">Auto</button>
+      <button type="button" data-acao="pular" aria-pressed="false">Pular</button>
+      <button type="button" data-acao="menu">Menu</button>
+    </nav>
+  </header>
+
+  <!-- Caixa de diálogo -->
+  <section id="caixa" hidden aria-label="Diálogo">
+    <div class="caixa-moldura">
+      <p id="caixa-nome"></p>
+      <p id="caixa-texto" aria-hidden="true"></p>
+      <div class="caixa-rodape">
+        <span id="caixa-indicador" aria-hidden="true"><i></i><i></i><i></i></span>
+        <button type="button" id="bt-avancar">Avançar</button>
+      </div>
+    </div>
+  </section>
+  <p id="leitor" class="so-leitor" aria-live="polite"></p>
+
+  <!-- Escolhas -->
+  <div id="escolhas" hidden role="group" aria-label="Escolhas">
+    <div class="escolhas-lista"></div>
+  </div>
+
+  <!-- Tela inicial -->
+  <section id="tela-titulo" class="tela" hidden aria-labelledby="titulo-jogo">
+    <div class="titulo-conteudo">
+      <p class="titulo-pre">Bellgrave · Universidade de Saint Agnes</p>
+      <h1 id="titulo-jogo" class="titulo-jogo"><span>Sete Noites</span> <span>de Pecado</span></h1>
+      <p class="titulo-sub">Seven Nights of Sin</p>
+      <div class="titulo-divisor" data-ornamento="divisor" aria-hidden="true"></div>
+      <nav class="titulo-menu" aria-label="Menu principal">
+        <button type="button" id="bt-novo">Novo jogo</button>
+        <button type="button" id="bt-continuar">Continuar <small id="info-continuar"></small></button>
+        <button type="button" id="bt-carregar">Carregar jogo</button>
+        <button type="button" id="bt-configuracoes">Configurações</button>
+        <button type="button" id="bt-sobre">Sobre</button>
+      </nav>
+    </div>
+    <p class="titulo-rodape">Protótipo · Prólogo e Capítulo 1 · Melhor com fones de ouvido</p>
+  </section>
+
+  <!-- Nome da protagonista -->
+  <section id="tela-nome" class="tela" hidden>
+    <form id="form-nome" class="cartao-papel" autocomplete="off">
+      <div class="selo" data-ornamento="selo" aria-hidden="true"></div>
+      <p class="papel-cabecalho">Universidade de Saint Agnes · Ficha de matrícula</p>
+      <h2><label for="campo-nome">Qual é o seu nome?</label></h2>
+      <p class="papel-texto">É assim que Bellgrave vai chamar você. Pode deixar como está ou escrever outro.</p>
+      <input id="campo-nome" name="nome" maxlength="16" value="Clara" spellcheck="false" required>
+      <p class="aviso-conteudo">Dark romance e mistério psicológico. Contém desaparecimento, incêndio, luto, manipulação emocional e sustos leves. Nas Configurações dá para reduzir animações e desligar sons.</p>
+      <div class="acoes">
+        <button type="submit" class="botao principal">Começar</button>
+        <button type="button" class="botao" id="bt-nome-voltar">Voltar</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Cartão de capítulo -->
+  <section id="cartao-capitulo" class="tela" hidden aria-live="polite">
+    <div class="cartao-conteudo">
+      <p class="cartao-numero"></p>
+      <h2 class="cartao-titulo"></h2>
+      <p class="cartao-pecado"></p>
+      <div class="cartao-divisor" data-ornamento="divisor" aria-hidden="true"></div>
+      <p class="cartao-epigrafe"></p>
+    </div>
+  </section>
+
+  <!-- Documento (carta, foto, convite...) -->
+  <section id="tela-documento" class="tela" hidden aria-labelledby="doc-titulo">
+    <div class="documento-area">
+      <article id="documento" class="documento">
+        <p class="doc-cabecalho" id="doc-cabecalho"></p>
+        <div class="doc-ilustracao" id="doc-ilustracao" aria-hidden="true"></div>
+        <h2 class="doc-titulo" id="doc-titulo"></h2>
+        <p class="doc-texto" id="doc-texto"></p>
+        <p class="doc-assinatura" id="doc-assinatura"></p>
+      </article>
+      <p class="doc-nota" id="doc-nota">Guardado no Diário.</p>
+      <button type="button" class="botao principal" id="bt-documento-fechar">Continuar</button>
+    </div>
+  </section>
+
+  <!-- Fim de capítulo -->
+  <section id="tela-fim-capitulo" class="tela" hidden aria-labelledby="fim-titulo">
+    <div class="fim-conteudo">
+      <p class="fim-pre" id="fim-pre"></p>
+      <h2 class="fim-titulo" id="fim-titulo"></h2>
+      <div class="fim-resumo" id="fim-resumo"></div>
+      <div class="acoes">
+        <button type="button" class="botao principal" id="bt-proximo-capitulo">Próximo capítulo</button>
+        <button type="button" class="botao" id="bt-fim-salvar">Salvar</button>
+        <button type="button" class="botao" id="bt-fim-menu">Menu principal</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final -->
+  <section id="tela-final" class="tela" hidden aria-labelledby="final-titulo">
+    <div class="fim-conteudo">
+      <p class="fim-pre" id="final-tipo"></p>
+      <h2 class="fim-titulo" id="final-titulo"></h2>
+      <p class="final-descricao" id="final-descricao"></p>
+      <p class="final-contagem" id="final-contagem"></p>
+      <div class="acoes">
+        <button type="button" class="botao principal" id="bt-final-voltar">Voltar à última escolha</button>
+        <button type="button" class="botao" id="bt-final-menu">Menu principal</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Menu: salvar, carregar, histórico, diário, configurações, sobre -->
+  <section id="painel" class="tela" hidden>
+    <div class="painel-caixa" role="dialog" aria-modal="true" aria-labelledby="painel-titulo">
+      <div class="painel-topo">
+        <h2 id="painel-titulo">Menu</h2>
+        <button type="button" class="botao" id="bt-painel-fechar">Fechar</button>
+      </div>
+      <div class="painel-abas" role="tablist" aria-label="Seções do menu">
+        <button type="button" role="tab" data-aba="salvar">Salvar</button>
+        <button type="button" role="tab" data-aba="carregar">Carregar</button>
+        <button type="button" role="tab" data-aba="historico">Histórico</button>
+        <button type="button" role="tab" data-aba="diario">Diário</button>
+        <button type="button" role="tab" data-aba="configuracoes">Configurações</button>
+        <button type="button" role="tab" data-aba="sobre">Sobre</button>
+        <button type="button" role="tab" data-aba="sair">Menu principal</button>
+      </div>
+      <div class="painel-corpo" id="painel-corpo" role="tabpanel"></div>
+    </div>
+  </section>
+
+  <!-- Confirmação (no lugar de alert/confirm do navegador) -->
+  <section id="confirmacao" class="tela" hidden role="alertdialog" aria-labelledby="confirmacao-texto">
+    <div class="confirmacao-caixa">
+      <p id="confirmacao-texto"></p>
+      <div class="acoes">
+        <button type="button" class="botao principal" id="bt-confirmar-sim">Sim</button>
+        <button type="button" class="botao" id="bt-confirmar-nao">Cancelar</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="avisos" aria-live="polite"></div>
+  <div id="cortina" class="camada" aria-hidden="true"></div>
+  <div id="clarao" class="camada" aria-hidden="true"></div>
+</main>
+
+<!-- Dados dos personagens e cenários -->
+<script src="js/characters.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/art.js"></script>
+
+<!-- Sistemas do jogo -->
+<script src="js/save.js"></script>
+<script src="js/state.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/script.js"></script>
+
+<!-- História: capítulos, documentos, rotas e roteiro -->
+<script src="story/chapters.js"></script>
+<script src="story/documents.js"></script>
+<script src="story/routes.js"></script>
+<script src="story/prologue.js"></script>
+<script src="story/chapter1.js"></script>
+
+<!-- Interface e motor -->
+<script src="js/stage.js"></script>
+<script src="js/dialogue.js"></script>
+<script src="js/choices.js"></script>
+<script src="js/menus.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+Efeitos sonoros e ambientes.
+
+Hoje todos os sons são sintetizados no navegador (js/audio.js).
+Para trocar um efeito por um arquivo, coloque o .mp3 ou .ogg aqui e escreva o caminho
+em ARQUIVOS_DE_AUDIO, no topo de js/audio.js. Exemplos:
+  efeitos: { carta: 'assets/sounds/carta.mp3' }
+  ambientes: { chuva: 'assets/sounds/chuva.mp3' }
