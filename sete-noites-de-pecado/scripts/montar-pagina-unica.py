@@ -25,9 +25,8 @@ def montar(saida, fragmento):
         return f"<style>\n{ler(m.group(1))}\n</style>"
 
     def script(m):
-        codigo = ler(m.group(1))
-        if "</script" in codigo:
-            raise SystemExit(f"{m.group(1)} contém </script> e não pode ser embutido")
+        # "</script" dentro do código (num comentário, por exemplo) fecharia a tag antes da hora
+        codigo = ler(m.group(1)).replace("</script", "<\\/script")
         return f"<script>\n{codigo}\n</script>"
 
     html = re.sub(r'<link rel="stylesheet" href="(css/[^"]+)">', estilo, html)
